@@ -5,19 +5,35 @@ import { routing } from './i18n/routing'
 
 const intlMiddleware = createMiddleware(routing)
 
-const protectedRoutes = ['/dashboard', '/words', '/collections', '/study', '/progress', '/settings']
+const protectedRoutes = [
+  '/dashboard',
+  '/words',
+  '/collections',
+  '/study',
+  '/progress',
+  '/settings',
+  '/onboarding',
+]
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Strip locale prefix to check against protected routes
   const pathnameWithoutLocale = pathname.replace(/^\/(uk|en)/, '') || '/'
-  const isProtectedRoute = protectedRoutes.some((route) =>
-    pathnameWithoutLocale.startsWith(route)
-  )
+  const hasLocalePrefix = pathnameWithoutLocale !== pathname
 
   // Run intl middleware first to get the response with locale headers
   const response = intlMiddleware(request)
+
+  // If there's no locale prefix, let intlMiddleware redirect to add it.
+  // Auth checks run on the next (locale-prefixed) request to avoid wrong locale extraction.
+  if (!hasLocalePrefix) {
+    return response
+  }
+
+  const isProtectedRoute = protectedRoutes.some((route) =>
+    pathnameWithoutLocale.startsWith(route)
+  )
 
   // Create Supabase client using the request/response
   const supabase = createServerClient(
@@ -39,7 +55,9 @@ export async function middleware(request: NextRequest) {
   )
 
   // Refresh session if expired
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
   // Redirect to auth if accessing protected route without session
   if (isProtectedRoute && !user) {
@@ -59,5 +77,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!api|_next|_vercel|.*\\..*).*)'],
+  matcher: ['/((?!api|auth/callback|_next|_vercel|.*\\..*).*)'],
 }
