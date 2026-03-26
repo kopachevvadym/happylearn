@@ -117,7 +117,19 @@
     "delete_confirm": "Видалити слово \"{word}\"?",
     "word_added": "Слово додано",
     "word_updated": "Слово оновлено",
-    "word_deleted": "Слово видалено"
+    "word_deleted": "Слово видалено",
+    "word_lang": "Мова слова",
+    "translation_lang": "Мова перекладу",
+    "mode_single": "Одне",
+    "mode_bulk": "Пачка",
+    "bulk_label": "Список слів",
+    "bulk_hint": "один рядок = одне слово",
+    "bulk_format_help": "Формат: слово - переклад",
+    "bulk_parsed": "Розпізнано: {count} слів",
+    "bulk_format_error": "Немає валідних рядків. Формат: слово - переклад",
+    "bulk_added": "Додано {count} слів",
+    "remove_translation": "Видалити переклад",
+    "remove_example": "Видалити приклад"
   },
   "collections": {
     "title": "Збірки",
@@ -158,7 +170,13 @@
     "results_correct": "Правильних відповідей",
     "results_continue": "Продовжити",
     "results_finish": "Завершити",
-    "session_empty": "Немає слів для вивчення"
+    "session_empty": "Немає слів для вивчення",
+    "write_input_label": "Ваш переклад",
+    "write_correct_label": "Правильно:",
+    "write_incorrect": "Неправильно",
+    "write_almost": "Майже",
+    "quit_session": "Вийти",
+    "quit_confirm": "Вийти з сесії? Прогрес не буде збережено."
   },
   "progress": {
     "title": "Прогрес",

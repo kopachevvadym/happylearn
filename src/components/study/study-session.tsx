@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
-import { Volume2 } from 'lucide-react'
+import { Volume2, Trophy, BookOpen, X } from 'lucide-react'
 import { submitStudyAnswer, finishStudySession } from '@/app/actions/study'
 import type { StudyCard } from '@/types'
 import { FlipCard } from './flip-card'
@@ -55,6 +55,10 @@ export function StudySession({ cards, sessionId, onFinish }: StudySessionProps) 
     [currentIndex, cards, sessionId, correctCount]
   )
 
+  const handleQuit = () => {
+    if (window.confirm(t('quit_confirm'))) onFinish()
+  }
+
   const speakWord = (word: string, lang: string) => {
     if (typeof window === 'undefined' || !window.speechSynthesis) return
     const utterance = new SpeechSynthesisUtterance(word)
@@ -65,8 +69,12 @@ export function StudySession({ cards, sessionId, onFinish }: StudySessionProps) 
   if (finished) {
     const percent = Math.round((correctCount / cards.length) * 100)
     return (
-      <div className="text-center py-12 space-y-6">
-        <div className="text-6xl">{percent >= 70 ? '🎉' : '📚'}</div>
+      <div role="status" className="text-center py-12 space-y-6">
+        {percent >= 70 ? (
+          <Trophy aria-hidden="true" className="w-16 h-16 mx-auto text-yellow-500" />
+        ) : (
+          <BookOpen aria-hidden="true" className="w-16 h-16 mx-auto text-primary" />
+        )}
         <h2 className="text-2xl font-bold">{t('results_title')}</h2>
         <div className="grid grid-cols-2 gap-4 max-w-xs mx-auto">
           <div className="bg-card border border-border rounded-xl p-4">
@@ -79,6 +87,7 @@ export function StudySession({ cards, sessionId, onFinish }: StudySessionProps) 
           </div>
         </div>
         <button
+          type="button"
           onClick={onFinish}
           className="bg-primary text-primary-foreground px-8 py-3 rounded-xl font-medium hover:bg-primary/90 transition-colors"
         >
@@ -88,17 +97,34 @@ export function StudySession({ cards, sessionId, onFinish }: StudySessionProps) 
     )
   }
 
+  const progress = Math.round(((currentIndex + 1) / cards.length) * 100)
+
   return (
     <div className="space-y-4">
       {/* Progress bar */}
       <div className="flex items-center gap-3">
-        <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+        <button
+          type="button"
+          onClick={handleQuit}
+          aria-label={t('quit_session')}
+          className="p-1 rounded-lg hover:bg-accent transition-colors text-muted-foreground hover:text-foreground flex-shrink-0"
+        >
+          <X aria-hidden="true" className="w-4 h-4" />
+        </button>
+        <div
+          role="progressbar"
+          aria-valuenow={currentIndex + 1}
+          aria-valuemin={1}
+          aria-valuemax={cards.length}
+          aria-label={`${currentIndex + 1} / ${cards.length}`}
+          className="flex-1 h-2 bg-muted rounded-full overflow-hidden"
+        >
           <div
             className="h-full bg-primary transition-all"
-            style={{ width: `${(currentIndex / cards.length) * 100}%` }}
+            style={{ width: `${progress}%` }}
           />
         </div>
-        <span className="text-sm text-muted-foreground">
+        <span className="text-sm text-muted-foreground flex-shrink-0">
           {currentIndex + 1} / {cards.length}
         </span>
       </div>
@@ -108,11 +134,12 @@ export function StudySession({ cards, sessionId, onFinish }: StudySessionProps) 
         <div className="flex items-center gap-2 justify-center">
           <h2 className="text-3xl font-bold">{currentCard.word.word}</h2>
           <button
+            type="button"
             onClick={() => speakWord(currentCard.word.word, currentCard.word.source_lang)}
+            aria-label={t('speak_word')}
             className="p-2 rounded-lg hover:bg-accent transition-colors text-muted-foreground"
-            title={t('speak_word')}
           >
-            <Volume2 className="w-5 h-5" />
+            <Volume2 aria-hidden="true" className="w-5 h-5" />
           </button>
         </div>
       )}

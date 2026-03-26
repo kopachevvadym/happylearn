@@ -34,7 +34,7 @@ export function QuizCard({ word, allCards, onAnswer, disabled }: QuizCardProps) 
     setTimeout(() => {
       onAnswer(option === correctAnswer ? 4 : 1)
       setSelected(null)
-    }, 600)
+    }, 1200)
   }
 
   return (

@@ -42,7 +42,9 @@ export function WriteCard({ word, onAnswer, disabled }: WriteCardProps) {
 
       {!checked ? (
         <div className="space-y-3">
+          <label htmlFor="write-input" className="sr-only">{t('write_input_label')}</label>
           <input
+            id="write-input"
             ref={inputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -54,6 +56,7 @@ export function WriteCard({ word, onAnswer, disabled }: WriteCardProps) {
           />
           <div className="flex gap-3">
             <button
+              type="button"
               onClick={() => submit(1)}
               disabled={disabled}
               className="flex-1 h-11 border-2 border-border rounded-xl text-sm hover:bg-accent transition-colors"
@@ -61,6 +64,7 @@ export function WriteCard({ word, onAnswer, disabled }: WriteCardProps) {
               {t('write_skip')}
             </button>
             <button
+              type="button"
               onClick={check}
               disabled={!input.trim() || disabled}
               className="flex-1 h-11 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-60"
@@ -71,7 +75,7 @@ export function WriteCard({ word, onAnswer, disabled }: WriteCardProps) {
         </div>
       ) : (
         <div className="space-y-3">
-          <div className={`p-4 rounded-xl border-2 text-center space-y-1 ${
+          <div role="status" className={`p-4 rounded-xl border-2 text-center space-y-1 ${
             isExact
               ? 'border-green-500 bg-green-50 dark:bg-green-950/20'
               : isClose
@@ -81,7 +85,7 @@ export function WriteCard({ word, onAnswer, disabled }: WriteCardProps) {
             <p className="font-medium">{input}</p>
             {!isExact && (
               <p className="text-sm text-muted-foreground">
-                Правильно: <span className="font-semibold">{correct}</span>
+                {t('write_correct_label')} <span className="font-semibold">{correct}</span>
               </p>
             )}
           </div>
@@ -89,6 +93,7 @@ export function WriteCard({ word, onAnswer, disabled }: WriteCardProps) {
           <div className="grid grid-cols-2 gap-3">
             {isExact ? (
               <button
+                type="button"
                 onClick={() => submit(5)}
                 className="col-span-2 h-11 bg-green-500 text-white rounded-xl font-medium hover:bg-green-600 transition-colors"
               >
@@ -97,20 +102,23 @@ export function WriteCard({ word, onAnswer, disabled }: WriteCardProps) {
             ) : isClose ? (
               <>
                 <button
+                  type="button"
                   onClick={() => submit(1)}
                   className="h-11 border-2 border-destructive/30 text-destructive rounded-xl text-sm hover:bg-destructive/10 transition-colors"
                 >
-                  Неправильно
+                  {t('write_incorrect')}
                 </button>
                 <button
+                  type="button"
                   onClick={() => submit(3)}
                   className="h-11 bg-yellow-500 text-white rounded-xl text-sm font-medium hover:bg-yellow-600 transition-colors"
                 >
-                  Майже ✓
+                  {t('write_almost')} ✓
                 </button>
               </>
             ) : (
               <button
+                type="button"
                 onClick={() => submit(1)}
                 className="col-span-2 h-11 border-2 border-destructive/30 text-destructive rounded-xl font-medium hover:bg-destructive/10 transition-colors"
               >

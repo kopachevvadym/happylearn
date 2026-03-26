@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { useTranslations } from 'next-intl'
-import { GraduationCap } from 'lucide-react'
+import { GraduationCap, ChevronLeft } from 'lucide-react'
 import { getStudyCards, createStudySession } from '@/app/actions/study'
 import type { StudyCard } from '@/types'
 import { StudySession } from './study-session'
@@ -17,6 +17,7 @@ interface StudySetupProps {
 
 export function StudySetup({ collections }: StudySetupProps) {
   const t = useTranslations('study')
+  const tCommon = useTranslations('common')
   const [selected, setSelected] = useState<Set<string>>(new Set())
   const [cards, setCards] = useState<StudyCard[] | null>(null)
   const [sessionId, setSessionId] = useState<string | null>(null)
@@ -50,13 +51,15 @@ export function StudySetup({ collections }: StudySetupProps) {
     if (cards.length === 0) {
       return (
         <div className="text-center py-16 space-y-3">
-          <GraduationCap className="w-12 h-12 mx-auto text-muted-foreground" />
+          <GraduationCap aria-hidden="true" className="w-12 h-12 mx-auto text-muted-foreground" />
           <p className="text-muted-foreground">{t('session_empty')}</p>
           <button
+            type="button"
             onClick={() => setCards(null)}
-            className="text-sm text-primary hover:underline"
+            className="text-sm text-primary hover:underline flex items-center gap-1 mx-auto"
           >
-            ← Назад
+            <ChevronLeft aria-hidden="true" className="w-4 h-4" />
+            {tCommon('back')}
           </button>
         </div>
       )
@@ -94,18 +97,22 @@ export function StudySetup({ collections }: StudySetupProps) {
                 className="w-4 h-4 rounded"
               />
               <span className="font-medium">{col.name}</span>
-              <span className="ml-auto text-sm text-muted-foreground">{wordCount} слів</span>
+              <span className="ml-auto text-sm text-muted-foreground">
+                {wordCount} {tCommon('words')}
+              </span>
             </label>
           )
         })}
       </div>
 
       <button
+        type="button"
         onClick={handleStart}
         disabled={isPending || !selected.size}
+        aria-busy={isPending}
         className="w-full h-12 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 transition-colors disabled:opacity-60"
       >
-        {isPending ? '...' : t('start_session')}
+        {isPending ? tCommon('loading') : t('start_session')}
       </button>
     </div>
   )

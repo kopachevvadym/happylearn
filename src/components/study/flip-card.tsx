@@ -24,16 +24,17 @@ export function FlipCard({ word, onAnswer, disabled }: FlipCardProps) {
 
   return (
     <div className="space-y-3">
-      {/* Card */}
-      <button
-        type="button"
-        onClick={() => !revealed && setRevealed(true)}
-        tabIndex={revealed ? -1 : 0}
+      {/* Card — div with role="button" to allow nested speak button */}
+      <div
+        role={!revealed ? 'button' : undefined}
+        tabIndex={!revealed ? 0 : undefined}
         aria-label={!revealed ? t('flip_show') : undefined}
-        className={`w-full min-h-56 flex flex-col items-center justify-center p-8 border-2 rounded-2xl transition-colors bg-card text-left ${
+        onClick={() => !revealed && setRevealed(true)}
+        onKeyDown={(e) => { if (!revealed && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); setRevealed(true) } }}
+        className={`min-h-56 flex flex-col items-center justify-center p-8 border-2 rounded-2xl transition-colors bg-card ${
           revealed
-            ? 'border-primary/40 cursor-default'
-            : 'border-border hover:border-primary/50'
+            ? 'border-primary/40'
+            : 'border-border hover:border-primary/50 cursor-pointer'
         }`}
       >
         {revealed ? (
@@ -62,7 +63,7 @@ export function FlipCard({ word, onAnswer, disabled }: FlipCardProps) {
             <p className="text-sm text-muted-foreground">{t('flip_show')}</p>
           </div>
         )}
-      </button>
+      </div>
 
       {/* Action buttons */}
       {revealed ? (
