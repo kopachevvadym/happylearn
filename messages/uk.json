@@ -244,6 +244,12 @@
     "import_skip": "Пропустити",
     "profile_saved": "Профіль збережено"
   },
+  "UserMenu": {
+    "profile": "Мій профіль",
+    "settings": "Налаштування",
+    "theme": "Тема",
+    "signOut": "Вийти"
+  },
   "errors": {
     "required": "Обов'язкове поле",
     "min_length": "Мінімум {min} символів",

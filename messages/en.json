@@ -244,6 +244,12 @@
     "import_skip": "Skip",
     "profile_saved": "Profile saved"
   },
+  "UserMenu": {
+    "profile": "My profile",
+    "settings": "Settings",
+    "theme": "Theme",
+    "signOut": "Sign out"
+  },
   "errors": {
     "required": "Required field",
     "min_length": "At least {min} characters",

@@ -1,49 +1,19 @@
 'use client'
 
-import { useTranslations } from 'next-intl'
-import { useTransition } from 'react'
-import { LogOut, User } from 'lucide-react'
-import { logout } from '@/app/actions/auth'
-import { ThemeToggle } from './theme-toggle'
+import { UserMenu } from './UserMenu'
 
 interface AppHeaderProps {
   user: { username: string; avatar_url: string | null }
 }
 
 export function AppHeader({ user }: AppHeaderProps) {
-  const t = useTranslations('nav')
-  const [isPending, startTransition] = useTransition()
-
-  const handleLogout = () => {
-    startTransition(async () => {
-      await logout()
-    })
-  }
-
   return (
-    <header className="h-16 border-b border-border bg-card flex items-center justify-between px-6">
+    <header className="h-16 border-b border-border bg-card flex items-center px-6">
       {/* Mobile logo */}
       <span className="font-bold md:hidden">happylearn</span>
 
-      <div className="hidden md:block" />
-
-      <div className="flex items-center gap-3">
-        <ThemeToggle />
-
-        <div className="flex items-center gap-2 text-sm">
-          <User aria-hidden="true" className="w-4 h-4 text-muted-foreground" />
-          <span className="text-muted-foreground hidden sm:block">{user.username}</span>
-        </div>
-
-        <button
-          onClick={handleLogout}
-          disabled={isPending}
-          aria-label={t('logout')}
-          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors disabled:opacity-60"
-        >
-          <LogOut aria-hidden="true" className="w-4 h-4" />
-          <span className="hidden sm:block">{t('logout')}</span>
-        </button>
+      <div className="max-w-4xl w-full mx-auto flex justify-end">
+        <UserMenu user={user} />
       </div>
     </header>
   )
