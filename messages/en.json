@@ -111,6 +111,7 @@
     "unmark_learned": "Mark as unknown",
     "add_to_collection": "Add to collection",
     "empty_state": "No words yet. Add your first one!",
+    "no_results": "No words found",
     "search_placeholder": "Search words...",
     "learned_badge": "Learned",
     "delete_confirm": "Delete word \"{word}\"?",

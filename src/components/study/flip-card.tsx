@@ -25,12 +25,15 @@ export function FlipCard({ word, onAnswer, disabled }: FlipCardProps) {
   return (
     <div className="space-y-3">
       {/* Card */}
-      <div
+      <button
+        type="button"
         onClick={() => !revealed && setRevealed(true)}
-        className={`min-h-56 flex flex-col items-center justify-center p-8 border-2 rounded-2xl transition-colors bg-card ${
+        tabIndex={revealed ? -1 : 0}
+        aria-label={!revealed ? t('flip_show') : undefined}
+        className={`w-full min-h-56 flex flex-col items-center justify-center p-8 border-2 rounded-2xl transition-colors bg-card text-left ${
           revealed
             ? 'border-primary/40 cursor-default'
-            : 'border-border hover:border-primary/50 cursor-pointer'
+            : 'border-border hover:border-primary/50'
         }`}
       >
         {revealed ? (
@@ -52,19 +55,20 @@ export function FlipCard({ word, onAnswer, disabled }: FlipCardProps) {
               type="button"
               onClick={(e) => { e.stopPropagation(); speakWord() }}
               className="p-2 rounded-lg hover:bg-accent transition-colors text-muted-foreground mx-auto block"
-              title={t('speak_word')}
+              aria-label={t('speak_word')}
             >
-              <Volume2 className="w-5 h-5" />
+              <Volume2 aria-hidden="true" className="w-5 h-5" />
             </button>
             <p className="text-sm text-muted-foreground">{t('flip_show')}</p>
           </div>
         )}
-      </div>
+      </button>
 
       {/* Action buttons */}
       {revealed ? (
         <div className="grid grid-cols-2 gap-3">
           <button
+            type="button"
             onClick={() => { setRevealed(false); onAnswer(1) }}
             disabled={disabled}
             className="h-12 border-2 border-destructive/30 text-destructive rounded-xl font-medium hover:bg-destructive/10 transition-colors disabled:opacity-60"
@@ -72,6 +76,7 @@ export function FlipCard({ word, onAnswer, disabled }: FlipCardProps) {
             {t('flip_dont_know')}
           </button>
           <button
+            type="button"
             onClick={() => { setRevealed(false); onAnswer(5) }}
             disabled={disabled}
             className="h-12 bg-green-500 text-white rounded-xl font-medium hover:bg-green-600 transition-colors disabled:opacity-60"
@@ -81,6 +86,7 @@ export function FlipCard({ word, onAnswer, disabled }: FlipCardProps) {
         </div>
       ) : (
         <button
+          type="button"
           onClick={() => setRevealed(true)}
           className="w-full h-12 border-2 border-border rounded-xl font-medium hover:bg-accent transition-colors"
         >

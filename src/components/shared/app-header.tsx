@@ -31,17 +31,17 @@ export function AppHeader({ user }: AppHeaderProps) {
         <ThemeToggle />
 
         <div className="flex items-center gap-2 text-sm">
-          <User className="w-4 h-4 text-muted-foreground" />
+          <User aria-hidden="true" className="w-4 h-4 text-muted-foreground" />
           <span className="text-muted-foreground hidden sm:block">{user.username}</span>
         </div>
 
         <button
           onClick={handleLogout}
           disabled={isPending}
+          aria-label={t('logout')}
           className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors disabled:opacity-60"
-          title={t('logout')}
         >
-          <LogOut className="w-4 h-4" />
+          <LogOut aria-hidden="true" className="w-4 h-4" />
           <span className="hidden sm:block">{t('logout')}</span>
         </button>
       </div>

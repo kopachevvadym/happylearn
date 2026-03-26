@@ -111,6 +111,7 @@
     "unmark_learned": "Не знаю",
     "add_to_collection": "До збірки",
     "empty_state": "Ще немає слів. Додайте перше!",
+    "no_results": "Нічого не знайдено",
     "search_placeholder": "Пошук слів...",
     "learned_badge": "Знаю",
     "delete_confirm": "Видалити слово \"{word}\"?",

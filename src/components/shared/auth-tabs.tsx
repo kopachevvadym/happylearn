@@ -13,6 +13,7 @@ type Tab = 'login' | 'register' | 'magic'
 
 export function AuthTabs() {
   const t = useTranslations('auth')
+  const tCommon = useTranslations('common')
   const [tab, setTab] = useState<Tab>('login')
   const [error, setError] = useState<string | null>(null)
   const [magicSent, setMagicSent] = useState(false)
@@ -54,10 +55,12 @@ export function AuthTabs() {
   return (
     <div className="bg-card border border-border rounded-xl p-6 shadow-sm space-y-5">
       {/* Tab switcher */}
-      <div className="flex rounded-lg bg-muted p-1 gap-1">
+      <div role="tablist" className="flex rounded-lg bg-muted p-1 gap-1">
         {(['login', 'register', 'magic'] as Tab[]).map((t_) => (
           <button
             key={t_}
+            role="tab"
+            aria-selected={tab === t_}
             onClick={() => { setTab(t_); setError(null); setMagicSent(false) }}
             className={`flex-1 py-2 text-sm font-medium rounded-md transition-colors ${
               tab === t_
@@ -71,7 +74,7 @@ export function AuthTabs() {
       </div>
 
       {error && (
-        <div className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2">
+        <div role="alert" className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2">
           {error}
         </div>
       )}
@@ -80,30 +83,35 @@ export function AuthTabs() {
       {tab === 'login' && (
         <form action={handleLogin} className="space-y-4">
           <div className="space-y-1">
-            <label className="text-sm font-medium">{t('email')}</label>
+            <label htmlFor="login-email" className="text-sm font-medium">{t('email')}</label>
             <input
+              id="login-email"
               name="email"
               type="email"
               required
+              autoComplete="email"
               className="w-full h-10 px-3 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
               placeholder="you@example.com"
             />
           </div>
           <div className="space-y-1">
-            <label className="text-sm font-medium">{t('password')}</label>
+            <label htmlFor="login-password" className="text-sm font-medium">{t('password')}</label>
             <input
+              id="login-password"
               name="password"
               type="password"
               required
+              autoComplete="current-password"
               className="w-full h-10 px-3 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
           <button
             type="submit"
             disabled={isPending}
+            aria-busy={isPending}
             className="w-full h-10 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-60"
           >
-            {isPending ? '...' : t('login_btn')}
+            {isPending ? tCommon('loading') : t('login_btn')}
           </button>
         </form>
       )}
@@ -112,41 +120,48 @@ export function AuthTabs() {
       {tab === 'register' && (
         <form action={handleRegister} className="space-y-4">
           <div className="space-y-1">
-            <label className="text-sm font-medium">{t('username')}</label>
+            <label htmlFor="reg-username" className="text-sm font-medium">{t('username')}</label>
             <input
+              id="reg-username"
               name="username"
               type="text"
               required
+              autoComplete="username"
               className="w-full h-10 px-3 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
               placeholder="my_username"
             />
           </div>
           <div className="space-y-1">
-            <label className="text-sm font-medium">{t('email')}</label>
+            <label htmlFor="reg-email" className="text-sm font-medium">{t('email')}</label>
             <input
+              id="reg-email"
               name="email"
               type="email"
               required
+              autoComplete="email"
               className="w-full h-10 px-3 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
               placeholder="you@example.com"
             />
           </div>
           <div className="space-y-1">
-            <label className="text-sm font-medium">{t('password')}</label>
+            <label htmlFor="reg-password" className="text-sm font-medium">{t('password')}</label>
             <input
+              id="reg-password"
               name="password"
               type="password"
               required
               minLength={8}
+              autoComplete="new-password"
               className="w-full h-10 px-3 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
           <button
             type="submit"
             disabled={isPending}
+            aria-busy={isPending}
             className="w-full h-10 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-60"
           >
-            {isPending ? '...' : t('register_btn')}
+            {isPending ? tCommon('loading') : t('register_btn')}
           </button>
           <p className="text-xs text-center text-muted-foreground">{t('terms')}</p>
         </form>
@@ -163,11 +178,13 @@ export function AuthTabs() {
           ) : (
             <form action={handleMagicLink} className="space-y-4">
               <div className="space-y-1">
-                <label className="text-sm font-medium">{t('email')}</label>
+                <label htmlFor="magic-email" className="text-sm font-medium">{t('email')}</label>
                 <input
+                  id="magic-email"
                   name="email"
                   type="email"
                   required
+                  autoComplete="email"
                   className="w-full h-10 px-3 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                   placeholder="you@example.com"
                 />
@@ -175,9 +192,10 @@ export function AuthTabs() {
               <button
                 type="submit"
                 disabled={isPending}
+                aria-busy={isPending}
                 className="w-full h-10 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-60"
               >
-                {isPending ? '...' : t('magic_link_btn')}
+                {isPending ? tCommon('loading') : t('magic_link_btn')}
               </button>
             </form>
           )}
@@ -187,7 +205,7 @@ export function AuthTabs() {
       {/* Divider */}
       <div className="flex items-center gap-3">
         <div className="flex-1 h-px bg-border" />
-        <span className="text-xs text-muted-foreground">або</span>
+        <span className="text-xs text-muted-foreground">{tCommon('or')}</span>
         <div className="flex-1 h-px bg-border" />
       </div>
 

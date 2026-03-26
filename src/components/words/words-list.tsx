@@ -25,6 +25,7 @@ export function WordsList({
   defaultTargetLang,
 }: WordsListProps) {
   const t = useTranslations('words')
+  const tCommon = useTranslations('common')
   const [search, setSearch] = useState('')
   const [showAddForm, setShowAddForm] = useState(false)
   const [editingWord, setEditingWord] = useState<Word | null>(null)
@@ -59,19 +60,21 @@ export function WordsList({
       {/* Toolbar */}
       <div className="flex gap-3 items-center">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Search aria-hidden="true" className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t('search_placeholder')}
+            aria-label={tCommon('search')}
             className="w-full h-10 pl-9 pr-3 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           />
         </div>
         <button
+          type="button"
           onClick={() => setShowAddForm(true)}
           className="flex items-center gap-2 bg-primary text-primary-foreground h-10 px-4 rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
         >
-          <Plus className="w-4 h-4" />
+          <Plus aria-hidden="true" className="w-4 h-4" />
           {t('add_word')}
         </button>
       </div>
@@ -107,8 +110,8 @@ export function WordsList({
 
       {/* Words list */}
       {filtered.length === 0 ? (
-        <div className="text-center py-16 text-muted-foreground">
-          {search ? 'Нічого не знайдено' : t('empty_state')}
+        <div role="status" className="text-center py-16 text-muted-foreground">
+          {search ? t('no_results') : t('empty_state')}
         </div>
       ) : (
         <div className="space-y-2">
@@ -122,14 +125,17 @@ export function WordsList({
                 }`}
               >
                 <button
+                  type="button"
                   onClick={() => handleToggleLearned(word.id, learned)}
                   disabled={isPending}
+                  aria-label={learned ? t('unmark_learned') : t('mark_learned')}
+                  aria-pressed={learned}
                   className="mt-0.5 flex-shrink-0 text-muted-foreground hover:text-green-500 transition-colors"
                 >
                   {learned ? (
-                    <CheckCircle className="w-5 h-5 text-green-500" />
+                    <CheckCircle aria-hidden="true" className="w-5 h-5 text-green-500" />
                   ) : (
-                    <Circle className="w-5 h-5" />
+                    <Circle aria-hidden="true" className="w-5 h-5" />
                   )}
                 </button>
 
@@ -158,23 +164,28 @@ export function WordsList({
 
                 <div className="flex items-center gap-1 flex-shrink-0">
                   <button
+                    type="button"
                     onClick={() => setCollectionModalWordId(word.id)}
+                    aria-label={t('add_to_collection')}
                     className="p-1.5 rounded-lg hover:bg-accent transition-colors text-muted-foreground hover:text-foreground"
-                    title={t('add_to_collection')}
                   >
-                    <BookmarkPlus className="w-4 h-4" />
+                    <BookmarkPlus aria-hidden="true" className="w-4 h-4" />
                   </button>
                   <button
+                    type="button"
                     onClick={() => setEditingWord(word)}
+                    aria-label={t('edit_word')}
                     className="p-1.5 rounded-lg hover:bg-accent transition-colors text-muted-foreground hover:text-foreground"
                   >
-                    <Pencil className="w-4 h-4" />
+                    <Pencil aria-hidden="true" className="w-4 h-4" />
                   </button>
                   <button
+                    type="button"
                     onClick={() => handleDelete(word.id, word.word)}
+                    aria-label={tCommon('delete')}
                     className="p-1.5 rounded-lg hover:bg-destructive/10 transition-colors text-muted-foreground hover:text-destructive"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 aria-hidden="true" className="w-4 h-4" />
                   </button>
                 </div>
               </div>

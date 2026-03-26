@@ -52,11 +52,14 @@ export function QuizCard({ word, allCards, onAnswer, disabled }: QuizCardProps) 
           return (
             <button
               key={i}
+              type="button"
               onClick={() => handleSelect(option)}
               disabled={!!selected || disabled}
-              className={`p-4 border-2 rounded-xl text-left font-medium transition-colors ${style}`}
+              className={`p-4 border-2 rounded-xl text-left font-medium transition-colors flex items-center justify-between ${style}`}
             >
-              {option}
+              <span>{option}</span>
+              {selected && isCorrect && <span aria-hidden="true" className="ml-2 text-green-600 dark:text-green-400">✓</span>}
+              {isSelected && !isCorrect && <span aria-hidden="true" className="ml-2 text-destructive">✗</span>}
             </button>
           )
         })}
