@@ -231,15 +231,11 @@
     "login_to_follow": "Увійдіть, щоб підписатись"
   },
   "profile": {
-    "public_collections": "Публічні збірки",
-    "no_collections": "Ще немає публічних збірок",
-    "streak": "Серія: {count} дн",
-    "badges_title": "Досягнення",
-    "home": "Головна",
-    "followers": "підписників",
-    "collections_title": "Серії",
-    "words_count_suffix": "слів",
-    "no_articles": "У цього користувача поки немає опублікованих журналів"
+    "streak": "{count} днів поспіль",
+    "wordsLearned": "{count} слів вивчено",
+    "publicCollections": "Публічні збірки",
+    "noCollections": "Публічних збірок поки немає",
+    "back": "Назад"
   },
   "settings": {
     "title": "Налаштування",

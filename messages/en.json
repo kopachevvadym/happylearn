@@ -231,15 +231,11 @@
     "login_to_follow": "Sign in to follow"
   },
   "profile": {
-    "public_collections": "Public Collections",
-    "no_collections": "No public collections yet",
-    "streak": "Streak: {count} days",
-    "badges_title": "Achievements",
-    "home": "Home",
-    "followers": "followers",
-    "collections_title": "Series",
-    "words_count_suffix": "words",
-    "no_articles": "This user hasn't published any articles yet"
+    "streak": "{count} days in a row",
+    "wordsLearned": "{count} words learned",
+    "publicCollections": "Public collections",
+    "noCollections": "No public collections yet",
+    "back": "Back"
   },
   "settings": {
     "title": "Settings",

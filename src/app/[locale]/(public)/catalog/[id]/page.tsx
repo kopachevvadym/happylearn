@@ -60,7 +60,7 @@ export default async function CatalogCollectionPage({
     SUPPORTED_LANGUAGES[collection.target_lang as keyof typeof SUPPORTED_LANGUAGES] ?? collection.target_lang
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
+    <div className="max-w-6xl mx-auto px-4 py-8 space-y-6">
       {/* Header */}
       <div className="flex items-start gap-3">
         <Link
