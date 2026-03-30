@@ -205,9 +205,14 @@
   },
   "profile": {
     "public_collections": "Public Collections",
-    "no_collections": "No public collections",
+    "no_collections": "No public collections yet",
     "streak": "Streak: {count} days",
-    "badges_title": "Achievements"
+    "badges_title": "Achievements",
+    "home": "Home",
+    "followers": "followers",
+    "collections_title": "Series",
+    "words_count_suffix": "words",
+    "no_articles": "This user hasn't published any articles yet"
   },
   "settings": {
     "title": "Settings",
@@ -243,6 +248,62 @@
     "import_update": "Update",
     "import_skip": "Skip",
     "profile_saved": "Profile saved"
+  },
+  "Settings": {
+    "title": "Settings",
+    "tabs": {
+      "profile": "Profile",
+      "languages": "Languages",
+      "appearance": "Appearance",
+      "apiKeys": "API Keys",
+      "importExport": "Import / Export"
+    },
+    "profile": {
+      "username": "Username",
+      "usernameHint": "3–30 characters: lowercase letters, digits, _ - .",
+      "role": "Role / Position",
+      "bio": "Bio",
+      "changePhoto": "Change photo",
+      "save": "Save"
+    },
+    "languages": {
+      "sourceLanguage": "Source language",
+      "targetLanguage": "Target language",
+      "dailyGoal": "Daily goal",
+      "words": "words",
+      "save": "Save"
+    },
+    "appearance": {
+      "theme": "Theme",
+      "light": "Light",
+      "dark": "Dark",
+      "system": "System",
+      "language": "Interface language",
+      "save": "Save"
+    },
+    "apiKeys": {
+      "name": "Name",
+      "keyName": "Key name",
+      "create": "Create",
+      "noKeys": "No keys",
+      "oneTimeWarning": "The key will be shown only once",
+      "copy": "Copy",
+      "copied": "Copied!",
+      "delete": "Delete",
+      "deleteConfirm": "Delete key \"{name}\"?",
+      "created": "Created",
+      "lastUsed": "Last used"
+    },
+    "importExport": {
+      "export": "Export",
+      "import": "Import",
+      "exportJson": "Export JSON",
+      "exportCsv": "Export CSV",
+      "importJson": "Import JSON",
+      "importCsv": "Import CSV",
+      "imported": "Imported",
+      "formatHint": "Format: array of objects {word, translations[], examples[]}"
+    }
   },
   "UserMenu": {
     "profile": "My profile",

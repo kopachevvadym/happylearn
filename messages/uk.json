@@ -205,9 +205,14 @@
   },
   "profile": {
     "public_collections": "Публічні збірки",
-    "no_collections": "Немає публічних збірок",
+    "no_collections": "Ще немає публічних збірок",
     "streak": "Серія: {count} дн",
-    "badges_title": "Досягнення"
+    "badges_title": "Досягнення",
+    "home": "Головна",
+    "followers": "підписників",
+    "collections_title": "Серії",
+    "words_count_suffix": "слів",
+    "no_articles": "У цього користувача поки немає опублікованих журналів"
   },
   "settings": {
     "title": "Налаштування",
@@ -243,6 +248,62 @@
     "import_update": "Оновити",
     "import_skip": "Пропустити",
     "profile_saved": "Профіль збережено"
+  },
+  "Settings": {
+    "title": "Налаштування",
+    "tabs": {
+      "profile": "Профіль",
+      "languages": "Мови",
+      "appearance": "Вигляд",
+      "apiKeys": "API ключі",
+      "importExport": "Імпорт / Експорт"
+    },
+    "profile": {
+      "username": "Нікнейм",
+      "usernameHint": "Від 3 до 30 символів: малі латинські літери, цифри, _ - .",
+      "role": "Роль / посада",
+      "bio": "Про себе",
+      "changePhoto": "Змінити фото",
+      "save": "Зберегти"
+    },
+    "languages": {
+      "sourceLanguage": "Мова оригіналу",
+      "targetLanguage": "Мова перекладу",
+      "dailyGoal": "Денна ціль",
+      "words": "слів",
+      "save": "Зберегти"
+    },
+    "appearance": {
+      "theme": "Тема",
+      "light": "Світла",
+      "dark": "Темна",
+      "system": "Системна",
+      "language": "Мова інтерфейсу",
+      "save": "Зберегти"
+    },
+    "apiKeys": {
+      "name": "Назва",
+      "keyName": "Назва ключа",
+      "create": "Створити",
+      "noKeys": "Немає ключів",
+      "oneTimeWarning": "Ключ буде показано лише один раз",
+      "copy": "Скопіювати",
+      "copied": "Скопійовано!",
+      "delete": "Видалити",
+      "deleteConfirm": "Видалити ключ \"{name}\"?",
+      "created": "Створено",
+      "lastUsed": "Останнє використання"
+    },
+    "importExport": {
+      "export": "Експорт",
+      "import": "Імпорт",
+      "exportJson": "Експортувати JSON",
+      "exportCsv": "Експортувати CSV",
+      "importJson": "Імпортувати JSON",
+      "importCsv": "Імпортувати CSV",
+      "imported": "Імпортовано",
+      "formatHint": "Формат: масив об'єктів {word, translations[], examples[]}"
+    }
   },
   "UserMenu": {
     "profile": "Мій профіль",
