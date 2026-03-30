@@ -357,6 +357,106 @@ export async function addExistingWordsToCollection(wordIds: string[], collection
   return { success: true }
 }
 
+export async function mergeDuplicates() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Unauthorized' }
+
+  const { data: words, error: fetchError } = await supabase
+    .from('words')
+    .select('id, word, translations, examples, source_lang, target_lang, created_at')
+    .eq('user_id', user.id)
+
+  if (fetchError || !words) return { error: fetchError?.message ?? 'Failed to fetch words' }
+
+  const groups = new Map<string, typeof words>()
+  for (const w of words) {
+    const key = `${w.word.toLowerCase()}__${w.source_lang}__${w.target_lang}`
+    const group = groups.get(key) ?? []
+    group.push(w)
+    groups.set(key, group)
+  }
+
+  const duplicateGroups = [...groups.values()].filter((g) => g.length > 1)
+  if (duplicateGroups.length === 0) return { mergedCount: 0, groupsCount: 0 }
+
+  let mergedCount = 0
+
+  for (const group of duplicateGroups) {
+    const sorted = [...group].sort(
+      (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+    )
+    const [primary, ...duplicates] = sorted
+
+    const allTranslations = [...new Set(group.flatMap((w) => w.translations as string[]))]
+    const allExamples = [...new Set(group.flatMap((w) => w.examples as string[]))]
+
+    const { data: progressRecords } = await supabase
+      .from('word_progress')
+      .select('*')
+      .in('word_id', group.map((w) => w.id))
+      .eq('user_id', user.id)
+
+    type ProgressRow = NonNullable<typeof progressRecords>[number]
+    const bestProgress = progressRecords?.reduce<ProgressRow | null>((best, cur) => {
+      if (!best) return cur
+      if (cur.ease_factor > best.ease_factor) return cur
+      if (cur.ease_factor === best.ease_factor && cur.repetitions > best.repetitions) return cur
+      return best
+    }, null)
+
+    await supabase
+      .from('words')
+      .update({ translations: allTranslations, examples: allExamples })
+      .eq('id', primary.id)
+
+    if (bestProgress && bestProgress.word_id !== primary.id) {
+      await supabase
+        .from('word_progress')
+        .upsert(
+          {
+            user_id: user.id,
+            word_id: primary.id,
+            ease_factor: bestProgress.ease_factor,
+            interval: bestProgress.interval,
+            repetitions: bestProgress.repetitions,
+            next_review_at: bestProgress.next_review_at,
+            is_learned: bestProgress.is_learned,
+          },
+          { onConflict: 'user_id,word_id' }
+        )
+    }
+
+    for (const duplicate of duplicates) {
+      const { data: dupCollections } = await supabase
+        .from('collection_words')
+        .select('collection_id')
+        .eq('word_id', duplicate.id)
+
+      if (dupCollections?.length) {
+        await supabase
+          .from('collection_words')
+          .upsert(
+            dupCollections.map(({ collection_id }) => ({ collection_id, word_id: primary.id })),
+            { onConflict: 'collection_id,word_id', ignoreDuplicates: true }
+          )
+      }
+    }
+
+    await supabase
+      .from('words')
+      .delete()
+      .in('id', duplicates.map((w) => w.id))
+      .eq('user_id', user.id)
+
+    mergedCount += duplicates.length
+  }
+
+  revalidatePath('/words')
+  revalidatePath('/dashboard')
+  return { mergedCount, groupsCount: duplicateGroups.length }
+}
+
 export async function addWordToCollections(wordId: string, collectionIds: string[]) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

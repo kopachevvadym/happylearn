@@ -141,7 +141,13 @@
     "markAsLearned": "I know",
     "bulk_delete_confirm": "Delete {count} {count, plural, one {word} other {words}}? This cannot be undone.",
     "markedAsLearned": "Marked as learned: {count}",
-    "deleted": "Deleted: {count}"
+    "deleted": "Deleted: {count}",
+    "duplicatesFound": "Found {count} {count, plural, one {duplicate} other {duplicates}}",
+    "mergeDuplicates": "Merge duplicates",
+    "mergeConfirmTitle": "Merge {count} {count, plural, one {duplicate} other {duplicates}}?",
+    "mergeConfirmDescription": "Words with the same spelling will be merged. Translations and examples will be preserved. The best progress will be kept.",
+    "mergeSuccess": "Merged {merged} {merged, plural, one {duplicate} other {duplicates}} in {groups} {groups, plural, one {group} other {groups}}",
+    "merge": "Merge"
   },
   "collections": {
     "title": "Collections",

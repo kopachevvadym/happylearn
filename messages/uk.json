@@ -141,7 +141,13 @@
     "markAsLearned": "Знаю",
     "bulk_delete_confirm": "Видалити {count} {count, plural, one {слово} few {слова} many {слів} other {слів}}? Цю дію не можна скасувати.",
     "markedAsLearned": "Позначено як вивчені: {count}",
-    "deleted": "Видалено: {count}"
+    "deleted": "Видалено: {count}",
+    "duplicatesFound": "Знайдено {count} {count, plural, one {дублікат} few {дублікати} many {дублікатів} other {дублікатів}}",
+    "mergeDuplicates": "Об'єднати дублікати",
+    "mergeConfirmTitle": "Об'єднати {count} {count, plural, one {дублікат} few {дублікати} many {дублікатів} other {дублікатів}}?",
+    "mergeConfirmDescription": "Слова з однаковим написанням будуть об'єднані. Переклади і приклади збережуться. Найкращий прогрес буде збережено.",
+    "mergeSuccess": "Об'єднано {merged} {merged, plural, one {дублікат} few {дублікати} many {дублікатів} other {дублікатів}} у {groups} {groups, plural, one {групу} few {групи} many {груп} other {груп}}",
+    "merge": "Об'єднати"
   },
   "collections": {
     "title": "Збірки",

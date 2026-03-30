@@ -2,13 +2,14 @@
 
 import { useState, useTransition, useRef, useEffect, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
-import { Plus, Search, Pencil, Trash2, BookmarkPlus } from 'lucide-react'
+import { Plus, Search, Pencil, Trash2, BookmarkPlus, AlertTriangle } from 'lucide-react'
 import { addWord, updateWord, deleteWord, addWordToCollections } from '@/app/actions/words'
 import type { Word } from '@/types'
 import { SUPPORTED_LANGUAGES } from '@/types'
 import { WordForm } from './word-form'
 import { AddToCollectionModal } from './add-to-collection-modal'
 import { WordsActionBar } from './words-action-bar'
+import { MergeDuplicatesButton } from './merge-duplicates-button'
 
 interface WordsListProps {
   words: Word[]
@@ -16,6 +17,7 @@ interface WordsListProps {
   collections: { id: string; name: string }[]
   defaultSourceLang: string
   defaultTargetLang: string
+  duplicatesCount: number
 }
 
 export function WordsList({
@@ -24,6 +26,7 @@ export function WordsList({
   collections,
   defaultSourceLang,
   defaultTargetLang,
+  duplicatesCount: initialDuplicatesCount,
 }: WordsListProps) {
   const t = useTranslations('words')
   const tCommon = useTranslations('common')
@@ -34,6 +37,7 @@ export function WordsList({
   const [isPending, startTransition] = useTransition()
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [toast, setToast] = useState<string | null>(null)
+  const [duplicatesCount, setDuplicatesCount] = useState(initialDuplicatesCount)
 
   const filtered = words.filter((w) =>
     w.word.toLowerCase().includes(search.toLowerCase()) ||
@@ -82,6 +86,25 @@ export function WordsList({
           className="text-sm text-green-700 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900 rounded-lg px-3 py-2"
         >
           {toast}
+        </div>
+      )}
+
+      {/* Duplicates banner */}
+      {duplicatesCount > 0 && (
+        <div className="flex items-center justify-between bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 rounded-lg px-4 py-3">
+          <div className="flex items-center gap-2">
+            <AlertTriangle aria-hidden="true" className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+            <span className="text-sm text-amber-800 dark:text-amber-200">
+              {t('duplicatesFound', { count: duplicatesCount })}
+            </span>
+          </div>
+          <MergeDuplicatesButton
+            count={duplicatesCount}
+            onSuccess={(message) => {
+              setDuplicatesCount(0)
+              showToast(message)
+            }}
+          />
         </div>
       )}
 
