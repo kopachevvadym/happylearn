@@ -129,7 +129,19 @@
     "bulk_format_error": "Немає валідних рядків. Формат: слово - переклад",
     "bulk_added": "Додано {count} слів",
     "remove_translation": "Видалити переклад",
-    "remove_example": "Видалити приклад"
+    "remove_example": "Видалити приклад",
+    "selected": "Вибрано: {count} {count, plural, one {слово} few {слова} many {слів} other {слів}}",
+    "selectAll": "Вибрати все",
+    "clearSelection": "Скинути вибір",
+    "changeLanguage": "Змінити мову",
+    "sourceLanguage": "Мова оригіналу",
+    "targetLanguage": "Мова перекладу",
+    "apply": "Застосувати",
+    "addToCollection": "До збірки",
+    "markAsLearned": "Знаю",
+    "bulk_delete_confirm": "Видалити {count} {count, plural, one {слово} few {слова} many {слів} other {слів}}? Цю дію не можна скасувати.",
+    "markedAsLearned": "Позначено як вивчені: {count}",
+    "deleted": "Видалено: {count}"
   },
   "collections": {
     "title": "Збірки",

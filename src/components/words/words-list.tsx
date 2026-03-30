@@ -1,13 +1,14 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useRef, useEffect, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
-import { Plus, Search, Pencil, Trash2, CheckCircle, Circle, BookmarkPlus } from 'lucide-react'
-import { addWord, updateWord, deleteWord, toggleWordLearned, addWordToCollections } from '@/app/actions/words'
+import { Plus, Search, Pencil, Trash2, BookmarkPlus } from 'lucide-react'
+import { addWord, updateWord, deleteWord, addWordToCollections } from '@/app/actions/words'
 import type { Word } from '@/types'
 import { SUPPORTED_LANGUAGES } from '@/types'
 import { WordForm } from './word-form'
 import { AddToCollectionModal } from './add-to-collection-modal'
+import { WordsActionBar } from './words-action-bar'
 
 interface WordsListProps {
   words: Word[]
@@ -31,21 +32,37 @@ export function WordsList({
   const [editingWord, setEditingWord] = useState<Word | null>(null)
   const [collectionModalWordId, setCollectionModalWordId] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
-  const [localLearned, setLocalLearned] = useState<Record<string, boolean>>({})
+  const [selectedIds, setSelectedIds] = useState<string[]>([])
+  const [toast, setToast] = useState<string | null>(null)
 
   const filtered = words.filter((w) =>
     w.word.toLowerCase().includes(search.toLowerCase()) ||
     (w.translations as string[]).some((tr) => tr.toLowerCase().includes(search.toLowerCase()))
   )
 
-  const isLearned = (wordId: string) =>
-    wordId in localLearned ? localLearned[wordId] : learnedWordIds.has(wordId)
+  const allSelected = filtered.length > 0 && filtered.every((w) => selectedIds.includes(w.id))
+  const someSelected = !allSelected && filtered.some((w) => selectedIds.includes(w.id))
+  const selectAllRef = useRef<HTMLInputElement>(null)
 
-  const handleToggleLearned = (wordId: string, current: boolean) => {
-    setLocalLearned((prev) => ({ ...prev, [wordId]: !current }))
-    startTransition(async () => {
-      await toggleWordLearned(wordId, !current)
-    })
+  useEffect(() => {
+    if (selectAllRef.current) {
+      selectAllRef.current.indeterminate = someSelected
+    }
+  }, [someSelected])
+
+  const toggleAll = () => {
+    setSelectedIds(allSelected ? [] : filtered.map((w) => w.id))
+  }
+
+  const toggleWord = (id: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    )
+  }
+
+  const showToast = (message: string) => {
+    setToast(message)
+    setTimeout(() => setToast(null), 3000)
   }
 
   const handleDelete = (wordId: string, word: string) => {
@@ -56,7 +73,18 @@ export function WordsList({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 pb-24">
+      {/* Toast */}
+      {toast && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="text-sm text-green-700 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900 rounded-lg px-3 py-2"
+        >
+          {toast}
+        </div>
+      )}
+
       {/* Toolbar */}
       <div className="flex gap-3 items-center">
         <div className="relative flex-1">
@@ -69,6 +97,7 @@ export function WordsList({
             className="w-full h-10 pl-9 pr-3 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           />
         </div>
+
         <button
           type="button"
           onClick={() => setShowAddForm(true)}
@@ -116,28 +145,30 @@ export function WordsList({
       ) : (
         <div className="space-y-2">
           {filtered.map((word) => {
-            const learned = isLearned(word.id)
+            const learned = learnedWordIds.has(word.id)
+            const isSelected = selectedIds.includes(word.id)
+
             return (
               <div
                 key={word.id}
-                className={`flex items-start gap-3 p-4 rounded-xl border transition-colors ${
-                  learned ? 'border-green-200 bg-green-50/50 dark:border-green-900 dark:bg-green-950/20' : 'border-border bg-card'
+                className={`group flex items-start gap-3 p-4 rounded-xl border transition-colors ${
+                  isSelected
+                    ? 'border-primary bg-primary/5'
+                    : learned
+                    ? 'border-green-200 bg-green-50/50 dark:border-green-900 dark:bg-green-950/20'
+                    : 'border-border bg-card'
                 }`}
               >
-                <button
-                  type="button"
-                  onClick={() => handleToggleLearned(word.id, learned)}
-                  disabled={isPending}
-                  aria-label={learned ? t('unmark_learned') : t('mark_learned')}
-                  aria-pressed={learned}
-                  className="mt-0.5 flex-shrink-0 text-muted-foreground hover:text-green-500 transition-colors"
-                >
-                  {learned ? (
-                    <CheckCircle aria-hidden="true" className="w-5 h-5 text-green-500" />
-                  ) : (
-                    <Circle aria-hidden="true" className="w-5 h-5" />
-                  )}
-                </button>
+                {/* Selection checkbox */}
+                <label className="mt-0.5 flex-shrink-0 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={() => toggleWord(word.id)}
+                    aria-label={word.word}
+                    className="w-4 h-4 rounded accent-primary cursor-pointer"
+                  />
+                </label>
 
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
@@ -162,7 +193,7 @@ export function WordsList({
                   )}
                 </div>
 
-                <div className="flex items-center gap-1 flex-shrink-0">
+                <div className="flex items-center gap-1 flex-shrink-0 opacity-100 [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-hover:opacity-100 transition-opacity duration-150">
                   <button
                     type="button"
                     onClick={() => setCollectionModalWordId(word.id)}
@@ -183,7 +214,8 @@ export function WordsList({
                     type="button"
                     onClick={() => handleDelete(word.id, word.word)}
                     aria-label={tCommon('delete')}
-                    className="p-1.5 rounded-lg hover:bg-destructive/10 transition-colors text-muted-foreground hover:text-destructive"
+                    disabled={isPending}
+                    className="p-1.5 rounded-lg hover:bg-destructive/10 transition-colors text-muted-foreground hover:text-destructive disabled:opacity-60"
                   >
                     <Trash2 aria-hidden="true" className="w-4 h-4" />
                   </button>
@@ -194,7 +226,7 @@ export function WordsList({
         </div>
       )}
 
-      {/* Add to collection modal */}
+      {/* Single-word add to collection modal */}
       {collectionModalWordId && (
         <AddToCollectionModal
           wordId={collectionModalWordId}
@@ -206,6 +238,22 @@ export function WordsList({
           onClose={() => setCollectionModalWordId(null)}
         />
       )}
+
+      {/* Bulk action bar */}
+      <WordsActionBar
+        selectedIds={selectedIds}
+        allSelected={allSelected}
+        someSelected={someSelected}
+        onToggleAll={toggleAll}
+        collections={collections}
+        defaultSourceLang={defaultSourceLang}
+        defaultTargetLang={defaultTargetLang}
+        onClearSelection={() => setSelectedIds([])}
+        onActionSuccess={(message) => {
+          setSelectedIds([])
+          showToast(message)
+        }}
+      />
     </div>
   )
 }

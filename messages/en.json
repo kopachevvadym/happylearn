@@ -129,7 +129,19 @@
     "bulk_format_error": "No valid lines. Format: word - translation",
     "bulk_added": "Added {count} words",
     "remove_translation": "Remove translation",
-    "remove_example": "Remove example"
+    "remove_example": "Remove example",
+    "selected": "Selected: {count} {count, plural, one {word} other {words}}",
+    "selectAll": "Select all",
+    "clearSelection": "Clear selection",
+    "changeLanguage": "Change language",
+    "sourceLanguage": "Source language",
+    "targetLanguage": "Target language",
+    "apply": "Apply",
+    "addToCollection": "Add to collection",
+    "markAsLearned": "I know",
+    "bulk_delete_confirm": "Delete {count} {count, plural, one {word} other {words}}? This cannot be undone.",
+    "markedAsLearned": "Marked as learned: {count}",
+    "deleted": "Deleted: {count}"
   },
   "collections": {
     "title": "Collections",

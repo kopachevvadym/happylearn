@@ -284,6 +284,79 @@ export async function addWordsToCollection(
   return { added: insertedWords.length, skipped, collectionName: col.name }
 }
 
+export async function updateWordsLanguage(wordIds: string[], sourceLang: string, targetLang: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Unauthorized' }
+
+  const { error } = await supabase
+    .from('words')
+    .update({ source_lang: sourceLang, target_lang: targetLang })
+    .in('id', wordIds)
+    .eq('user_id', user.id)
+
+  if (error) return { error: error.message }
+  revalidatePath('/words')
+  return { success: true }
+}
+
+export async function markWordsAsLearned(wordIds: string[]) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Unauthorized' }
+
+  const rows = wordIds.map((id) => ({ user_id: user.id, word_id: id, is_learned: true }))
+  const { error } = await supabase
+    .from('word_progress')
+    .upsert(rows, { onConflict: 'user_id,word_id' })
+
+  if (error) return { error: error.message }
+  revalidatePath('/words')
+  revalidatePath('/progress')
+  return { success: true }
+}
+
+export async function deleteWords(wordIds: string[]) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Unauthorized' }
+
+  const { error } = await supabase
+    .from('words')
+    .delete()
+    .in('id', wordIds)
+    .eq('user_id', user.id)
+
+  if (error) return { error: error.message }
+  revalidatePath('/words')
+  revalidatePath('/dashboard')
+  return { success: true }
+}
+
+export async function addExistingWordsToCollection(wordIds: string[], collectionId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Unauthorized' }
+
+  const { data: col } = await supabase
+    .from('collections')
+    .select('id')
+    .eq('id', collectionId)
+    .eq('user_id', user.id)
+    .single()
+  if (!col) return { error: 'Not found' }
+
+  const rows = wordIds.map((id) => ({ collection_id: collectionId, word_id: id }))
+  const { error } = await supabase
+    .from('collection_words')
+    .upsert(rows, { onConflict: 'collection_id,word_id', ignoreDuplicates: true })
+
+  if (error) return { error: error.message }
+  revalidatePath('/words')
+  revalidatePath('/collections')
+  return { success: true }
+}
+
 export async function addWordToCollections(wordId: string, collectionIds: string[]) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
