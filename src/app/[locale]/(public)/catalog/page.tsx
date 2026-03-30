@@ -39,27 +39,13 @@ export default async function CatalogPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border bg-background/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-          <a href="/" className="font-bold text-lg">happylearn</a>
-          {!user && (
-            <a href="/auth" className="text-sm bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors">
-              Увійти
-            </a>
-          )}
-        </div>
-      </header>
-
-      <div className="max-w-6xl mx-auto px-4 py-8 space-y-6">
+    <div className="max-w-6xl mx-auto px-4 py-8 space-y-6">
         <h1 className="text-2xl font-bold">{t('title')}</h1>
         <CatalogClient
           collections={collections ?? []}
           followedIds={followedIds}
           isLoggedIn={!!user}
         />
-      </div>
     </div>
   )
 }

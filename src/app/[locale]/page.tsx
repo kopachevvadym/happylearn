@@ -1,33 +1,14 @@
 import { useTranslations } from 'next-intl'
 import Link from 'next/link'
 import { BookOpen, Repeat2, Globe, Zap } from 'lucide-react'
+import { PublicHeader } from '@/components/shared/public-header'
 
 export default function LandingPage() {
   const t = useTranslations('landing')
-  const tNav = useTranslations('nav')
 
   return (
     <div className="flex flex-col min-h-full">
-      {/* Header */}
-      <header className="border-b border-border bg-background/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-          <span className="font-bold text-xl text-foreground">happylearn</span>
-          <nav className="flex items-center gap-4">
-            <Link
-              href="/catalog"
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              {tNav('catalog')}
-            </Link>
-            <Link
-              href="/auth"
-              className="text-sm bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors"
-            >
-              {t('cta_start')}
-            </Link>
-          </nav>
-        </div>
-      </header>
+      <PublicHeader />
 
       {/* Hero */}
       <section className="flex-1 flex flex-col items-center justify-center text-center px-4 py-24">
