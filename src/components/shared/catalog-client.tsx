@@ -117,7 +117,9 @@ export function CatalogClient({ collections, followedIds: initialFollowed, isLog
           return (
             <div key={col.id} className="bg-card border border-border rounded-xl p-4 space-y-3">
               <div>
-                <h3 className="font-semibold">{col.name}</h3>
+                <a href={`/catalog/${col.id}`} className="font-semibold hover:underline">
+                  {col.name}
+                </a>
                 {col.description && (
                   <p className="text-sm text-muted-foreground mt-0.5 line-clamp-2">{col.description}</p>
                 )}

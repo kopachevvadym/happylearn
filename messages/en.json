@@ -311,6 +311,23 @@
     "theme": "Theme",
     "signOut": "Sign out"
   },
+  "CollectionPage": {
+    "selected": "Selected: {count} {count, plural, one {word} other {words}}",
+    "addToCollection": "Add to collection",
+    "myDictionary": "My Dictionary",
+    "createNew": "Create new collection",
+    "selectAll": "Select all",
+    "duplicateWarning": "{added} words will be added, {skipped} already in collection",
+    "addNew": "Add new",
+    "cancel": "Cancel",
+    "addedToast": "Added {count} words to «{collection}»",
+    "add": "Add",
+    "wordsCount": "{count} words",
+    "noWords": "No words",
+    "notFound": "Nothing found",
+    "loginToSelect": "Sign in to select words",
+    "searchPlaceholder": "Search words..."
+  },
   "errors": {
     "required": "Required field",
     "min_length": "At least {min} characters",

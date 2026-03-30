@@ -311,6 +311,23 @@
     "theme": "Тема",
     "signOut": "Вийти"
   },
+  "CollectionPage": {
+    "selected": "Вибрано: {count} {count, plural, one {слово} few {слова} many {слів} other {слів}}",
+    "addToCollection": "Додати до збірки",
+    "myDictionary": "Мій словник",
+    "createNew": "Створити нову збірку",
+    "selectAll": "Вибрати все",
+    "duplicateWarning": "{added} слів будуть додані, {skipped} вже є у збірці",
+    "addNew": "Додати нові",
+    "cancel": "Скасувати",
+    "addedToast": "Додано {count} слів до «{collection}»",
+    "add": "Додати",
+    "wordsCount": "{count} слів",
+    "noWords": "Немає слів",
+    "notFound": "Нічого не знайдено",
+    "loginToSelect": "Увійдіть, щоб вибирати слова",
+    "searchPlaceholder": "Пошук слів..."
+  },
   "errors": {
     "required": "Обов'язкове поле",
     "min_length": "Мінімум {min} символів",

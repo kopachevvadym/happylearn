@@ -180,6 +180,110 @@ export async function addWordsBulk(
   return { success: true, count: insertedWords?.length ?? 0 }
 }
 
+export async function checkWordDuplicates(
+  sourceWordIds: string[],
+  targetCollectionId: string,
+) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Unauthorized' as const }
+
+  const { data: col } = await supabase
+    .from('collections')
+    .select('id')
+    .eq('id', targetCollectionId)
+    .eq('user_id', user.id)
+    .single()
+  if (!col) return { error: 'Not found' as const }
+
+  const { data: sourceWords } = await supabase
+    .from('words')
+    .select('id, word')
+    .in('id', sourceWordIds)
+
+  if (!sourceWords?.length) return { toAdd: 0, toSkip: 0 }
+
+  const { data: existingCWRaw } = await supabase
+    .from('collection_words')
+    .select('word_id, words(word)')
+    .eq('collection_id', targetCollectionId)
+
+  const existingCW = existingCWRaw as unknown as Array<{ word_id: string; words: { word: string } | null }>
+  const existingWordTexts = new Set(
+    existingCW.map((e) => e.words?.word.toLowerCase()).filter((w): w is string => !!w)
+  )
+
+  const toSkip = sourceWords.filter((w) => existingWordTexts.has(w.word.toLowerCase())).length
+  return { toAdd: sourceWords.length - toSkip, toSkip }
+}
+
+export async function addWordsToCollection(
+  wordIds: string[],
+  targetCollectionId: string,
+) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Unauthorized' as const }
+
+  const { data: col } = await supabase
+    .from('collections')
+    .select('id, name')
+    .eq('id', targetCollectionId)
+    .eq('user_id', user.id)
+    .single()
+  if (!col) return { error: 'Not found' as const }
+
+  const { data: sourceWords } = await supabase
+    .from('words')
+    .select('id, word, translations, examples, source_lang, target_lang')
+    .in('id', wordIds)
+
+  if (!sourceWords?.length) return { added: 0, skipped: 0, collectionName: col.name }
+
+  const { data: existingCWRaw } = await supabase
+    .from('collection_words')
+    .select('word_id, words(word)')
+    .eq('collection_id', targetCollectionId)
+
+  const existingCW = existingCWRaw as unknown as Array<{ word_id: string; words: { word: string } | null }>
+  const existingWordTexts = new Set(
+    existingCW.map((e) => e.words?.word.toLowerCase()).filter((w): w is string => !!w)
+  )
+
+  const newWords = sourceWords.filter((w) => !existingWordTexts.has(w.word.toLowerCase()))
+  const skipped = sourceWords.length - newWords.length
+
+  if (!newWords.length) return { added: 0, skipped, collectionName: col.name }
+
+  const { data: insertedWords, error: insertError } = await supabase
+    .from('words')
+    .insert(
+      newWords.map((w) => ({
+        user_id: user.id,
+        word: w.word,
+        translations: w.translations,
+        examples: w.examples,
+        source_lang: w.source_lang,
+        target_lang: w.target_lang,
+      }))
+    )
+    .select('id')
+
+  if (insertError || !insertedWords?.length) return { added: 0, skipped, collectionName: col.name }
+
+  await supabase
+    .from('collection_words')
+    .insert(insertedWords.map((w) => ({ collection_id: targetCollectionId, word_id: w.id })))
+
+  await checkAndAwardBadges(user.id, 'word_added')
+
+  revalidatePath('/collections')
+  revalidatePath('/words')
+  revalidatePath('/dashboard')
+
+  return { added: insertedWords.length, skipped, collectionName: col.name }
+}
+
 export async function addWordToCollections(wordId: string, collectionIds: string[]) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
