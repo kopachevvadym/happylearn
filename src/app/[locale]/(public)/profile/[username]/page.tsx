@@ -54,7 +54,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
     <div>
       {/* Breadcrumb */}
       <div className="border-b border-border/50">
-        <div className="max-w-4xl mx-auto px-6 py-3 flex items-center gap-2 text-sm text-muted-foreground">
+        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center gap-2 text-sm text-muted-foreground">
           <Link href="/" className="hover:text-foreground transition-colors">{t('home')}</Link>
           <span>/</span>
           <span className="text-foreground">{profile.username}</span>
@@ -63,7 +63,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
 
       {/* Profile hero */}
       <div className="border-b border-border">
-        <div className="max-w-4xl mx-auto px-6 py-10">
+        <div className="max-w-6xl mx-auto px-4 py-10">
           <div className="flex items-center gap-6">
             {/* Avatar */}
             <div className="shrink-0">
@@ -100,7 +100,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
       </div>
 
       {/* Content */}
-      <div className="max-w-4xl mx-auto px-6 py-10 space-y-10">
+      <div className="max-w-6xl mx-auto px-4 py-10 space-y-10">
         {/* Collections / "Серії" */}
         <section>
           <h2 className="text-xl font-semibold mb-5">{t('collections_title')}</h2>
