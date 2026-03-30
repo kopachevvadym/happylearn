@@ -2,31 +2,64 @@
 
 import { useState, useTransition, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
-import { Volume2, Trophy, BookOpen, X } from 'lucide-react'
-import { submitStudyAnswer, finishStudySession } from '@/app/actions/study'
+import { Volume2, X } from 'lucide-react'
+import {
+  submitStudyAnswer,
+  finishStudySession,
+  getStudyCards,
+  getAdditionalCards,
+  createStudySession,
+} from '@/app/actions/study'
 import type { StudyCard } from '@/types'
 import { FlipCard } from './flip-card'
 import { QuizCard } from './quiz-card'
 import { WriteCard } from './write-card'
+import { SessionResults } from './session-results'
+import { ScheduleComplete } from './schedule-complete'
+
+type Phase = 'studying' | 'batch_results' | 'schedule_complete'
 
 interface StudySessionProps {
   cards: StudyCard[]
   sessionId: string
+  collectionIds: string[]
+  scheduledCount: number
   onFinish: () => void
 }
 
-export function StudySession({ cards, sessionId, onFinish }: StudySessionProps) {
+export function StudySession({
+  cards: initialCards,
+  sessionId: initialSessionId,
+  collectionIds,
+  scheduledCount,
+  onFinish,
+}: StudySessionProps) {
   const t = useTranslations('study')
+
+  const [cards, setCards] = useState(initialCards)
+  const [sessionId, setSessionId] = useState(initialSessionId)
   const [currentIndex, setCurrentIndex] = useState(0)
-  const [correctCount, setCorrectCount] = useState(0)
-  const [finished, setFinished] = useState(false)
+  const [batchCorrect, setBatchCorrect] = useState(0)
+  const [batchNewLearned, setBatchNewLearned] = useState(0)
+  const [totalDone, setTotalDone] = useState(0)
+  const [phase, setPhase] = useState<Phase>('studying')
+  const [nextBatch, setNextBatch] = useState<StudyCard[] | null>(null)
+  const [isAdditional, setIsAdditional] = useState(false)
   const [isPending, startTransition] = useTransition()
 
   const currentCard = cards[currentIndex]
 
+  const speakWord = (word: string, lang: string) => {
+    if (typeof window === 'undefined' || !window.speechSynthesis) return
+    const utterance = new SpeechSynthesisUtterance(word)
+    utterance.lang = lang
+    window.speechSynthesis.speak(utterance)
+  }
+
   const handleAnswer = useCallback(
     (quality: number) => {
       const card = cards[currentIndex]
+      const isNew = !card.progress || card.progress.repetitions === 0
       startTransition(async () => {
         const result = await submitStudyAnswer(
           sessionId,
@@ -39,61 +72,115 @@ export function StudySession({ cards, sessionId, onFinish }: StudySessionProps) 
                 interval: card.progress.interval,
                 repetitions: card.progress.repetitions,
               }
-            : null
+            : null,
+          isAdditional
         )
 
-        if (result?.isCorrect) setCorrectCount((c) => c + 1)
+        const isCorrect = result?.isCorrect ?? false
+        const newBatchCorrect = batchCorrect + (isCorrect ? 1 : 0)
+        const newBatchNewLearned = batchNewLearned + (isNew && isCorrect ? 1 : 0)
 
-        if (currentIndex + 1 >= cards.length) {
-          await finishStudySession(sessionId, cards.length, correctCount + (result?.isCorrect ? 1 : 0))
-          setFinished(true)
-        } else {
+        const isLastCard = currentIndex + 1 >= cards.length
+
+        if (!isLastCard) {
+          setBatchCorrect(newBatchCorrect)
+          setBatchNewLearned(newBatchNewLearned)
           setCurrentIndex((i) => i + 1)
+          return
+        }
+
+        // Last card — finish this session
+        const newTotalDone = totalDone + cards.length
+        await finishStudySession(sessionId, cards.length, newBatchCorrect)
+
+        setBatchCorrect(newBatchCorrect)
+        setBatchNewLearned(newBatchNewLearned)
+        setTotalDone(newTotalDone)
+
+        if (isAdditional) {
+          // Additional training complete — just show results with no Continue
+          setNextBatch(null)
+          setPhase('batch_results')
+          return
+        }
+
+        // Check for more scheduled words
+        const next = await getStudyCards(collectionIds)
+        if (next.length > 0) {
+          setNextBatch(next)
+          setPhase('batch_results')
+        } else {
+          setPhase('schedule_complete')
         }
       })
     },
-    [currentIndex, cards, sessionId, correctCount]
+    [cards, currentIndex, sessionId, batchCorrect, batchNewLearned, totalDone, collectionIds, isAdditional]
   )
+
+  const handleContinue = useCallback(() => {
+    if (!nextBatch) return
+    startTransition(async () => {
+      const sessionResult = await createStudySession(collectionIds)
+      if (!sessionResult?.data) return
+      setSessionId(sessionResult.data.id)
+      setCards(nextBatch)
+      setNextBatch(null)
+      setCurrentIndex(0)
+      setBatchCorrect(0)
+      setBatchNewLearned(0)
+      setPhase('studying')
+    })
+  }, [nextBatch, collectionIds])
+
+  const handleContinueTraining = useCallback(() => {
+    startTransition(async () => {
+      const [sessionResult, additionalCards] = await Promise.all([
+        createStudySession(collectionIds),
+        getAdditionalCards(collectionIds),
+      ])
+      if (!sessionResult?.data || !additionalCards.length) {
+        onFinish()
+        return
+      }
+      setSessionId(sessionResult.data.id)
+      setCards(additionalCards)
+      setNextBatch(null)
+      setCurrentIndex(0)
+      setBatchCorrect(0)
+      setBatchNewLearned(0)
+      setIsAdditional(true)
+      setPhase('studying')
+    })
+  }, [collectionIds, onFinish])
 
   const handleQuit = () => {
     if (window.confirm(t('quit_confirm'))) onFinish()
   }
 
-  const speakWord = (word: string, lang: string) => {
-    if (typeof window === 'undefined' || !window.speechSynthesis) return
-    const utterance = new SpeechSynthesisUtterance(word)
-    utterance.lang = lang
-    window.speechSynthesis.speak(utterance)
+  if (phase === 'batch_results') {
+    return (
+      <SessionResults
+        batchCorrect={batchCorrect}
+        batchTotal={cards.length}
+        newLearned={batchNewLearned}
+        isAdditional={isAdditional}
+        hasMore={nextBatch !== null}
+        isPending={isPending}
+        onContinue={handleContinue}
+        onFinish={onFinish}
+      />
+    )
   }
 
-  if (finished) {
-    const percent = Math.round((correctCount / cards.length) * 100)
+  if (phase === 'schedule_complete') {
     return (
-      <div role="status" className="text-center py-12 space-y-6">
-        {percent >= 70 ? (
-          <Trophy aria-hidden="true" className="w-16 h-16 mx-auto text-yellow-500" />
-        ) : (
-          <BookOpen aria-hidden="true" className="w-16 h-16 mx-auto text-primary" />
-        )}
-        <h2 className="text-2xl font-bold">{t('results_title')}</h2>
-        <div className="grid grid-cols-2 gap-4 max-w-xs mx-auto">
-          <div className="bg-card border border-border rounded-xl p-4">
-            <div className="text-2xl font-bold">{cards.length}</div>
-            <div className="text-sm text-muted-foreground">{t('results_words')}</div>
-          </div>
-          <div className="bg-card border border-border rounded-xl p-4">
-            <div className="text-2xl font-bold">{percent}%</div>
-            <div className="text-sm text-muted-foreground">{t('results_correct')}</div>
-          </div>
-        </div>
-        <button
-          type="button"
-          onClick={onFinish}
-          className="bg-primary text-primary-foreground px-8 py-3 rounded-xl font-medium hover:bg-primary/90 transition-colors"
-        >
-          {t('results_finish')}
-        </button>
-      </div>
+      <ScheduleComplete
+        scheduledTotal={scheduledCount}
+        doneSoFar={totalDone}
+        isPending={isPending}
+        onContinueTraining={handleContinueTraining}
+        onFinish={onFinish}
+      />
     )
   }
 
@@ -129,7 +216,11 @@ export function StudySession({ cards, sessionId, onFinish }: StudySessionProps) 
         </span>
       </div>
 
-      {/* Word header — shown for quiz/write; flip card shows the word itself */}
+      {isAdditional && (
+        <p className="text-xs text-center text-muted-foreground">{t('additional_training')}</p>
+      )}
+
+      {/* Word header — shown for quiz/write */}
       {currentCard.format !== 'flip' && (
         <div className="flex items-center gap-2 justify-center">
           <h2 className="text-3xl font-bold">{currentCard.word.word}</h2>
@@ -144,28 +235,14 @@ export function StudySession({ cards, sessionId, onFinish }: StudySessionProps) 
         </div>
       )}
 
-      {/* Card by format */}
       {currentCard.format === 'flip' && (
-        <FlipCard
-          word={currentCard.word}
-          onAnswer={handleAnswer}
-          disabled={isPending}
-        />
+        <FlipCard word={currentCard.word} onAnswer={handleAnswer} disabled={isPending} />
       )}
       {currentCard.format === 'quiz' && (
-        <QuizCard
-          word={currentCard.word}
-          allCards={cards}
-          onAnswer={handleAnswer}
-          disabled={isPending}
-        />
+        <QuizCard word={currentCard.word} allCards={cards} onAnswer={handleAnswer} disabled={isPending} />
       )}
       {currentCard.format === 'write' && (
-        <WriteCard
-          word={currentCard.word}
-          onAnswer={handleAnswer}
-          disabled={isPending}
-        />
+        <WriteCard word={currentCard.word} onAnswer={handleAnswer} disabled={isPending} />
       )}
     </div>
   )

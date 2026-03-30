@@ -1,11 +1,13 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useEffect, useTransition, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
 import { GraduationCap, ChevronLeft } from 'lucide-react'
-import { getStudyCards, createStudySession } from '@/app/actions/study'
+import { getStudyCards, createStudySession, getScheduledCount } from '@/app/actions/study'
 import type { StudyCard } from '@/types'
 import { StudySession } from './study-session'
+
+const STORAGE_KEY = 'study_selected_collections'
 
 interface StudySetupProps {
   collections: {
@@ -13,21 +15,63 @@ interface StudySetupProps {
     name: string
     collection_words: { count: number }[]
   }[]
+  completedToday: number
 }
 
-export function StudySetup({ collections }: StudySetupProps) {
+export function StudySetup({ collections, completedToday }: StudySetupProps) {
   const t = useTranslations('study')
   const tCommon = useTranslations('common')
+
   const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [scheduledCount, setScheduledCount] = useState(0)
   const [cards, setCards] = useState<StudyCard[] | null>(null)
   const [sessionId, setSessionId] = useState<string | null>(null)
+  const [activeCollectionIds, setActiveCollectionIds] = useState<string[]>([])
+
   const [isPending, startTransition] = useTransition()
+  const [isCountPending, startCountTransition] = useTransition()
+
+  // Load saved selection from localStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY)
+      if (saved) {
+        const ids: string[] = JSON.parse(saved)
+        const valid = ids.filter((id) => collections.some((c) => c.id === id))
+        if (valid.length) setSelected(new Set(valid))
+      }
+    } catch {
+      // ignore
+    }
+  }, [collections])
+
+  const fetchScheduledCount = useCallback((ids: string[]) => {
+    if (!ids.length) {
+      setScheduledCount(0)
+      return
+    }
+    startCountTransition(async () => {
+      const count = await getScheduledCount(ids)
+      setScheduledCount(count)
+    })
+  }, [])
+
+  // Fetch scheduled count when selection changes
+  useEffect(() => {
+    const ids = Array.from(selected)
+    fetchScheduledCount(ids)
+  }, [selected, fetchScheduledCount])
 
   const toggle = (id: string) => {
     setSelected((prev) => {
       const next = new Set(prev)
       if (next.has(id)) next.delete(id)
       else next.add(id)
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(Array.from(next)))
+      } catch {
+        // ignore
+      }
       return next
     })
   }
@@ -42,6 +86,7 @@ export function StudySetup({ collections }: StudySetupProps) {
       ])
       if (sessionResult?.data) {
         setSessionId(sessionResult.data.id)
+        setActiveCollectionIds(ids)
         setCards(studyCards)
       }
     })
@@ -68,6 +113,8 @@ export function StudySetup({ collections }: StudySetupProps) {
       <StudySession
         cards={cards}
         sessionId={sessionId}
+        collectionIds={activeCollectionIds}
+        scheduledCount={scheduledCount}
         onFinish={() => setCards(null)}
       />
     )
@@ -76,7 +123,6 @@ export function StudySetup({ collections }: StudySetupProps) {
   return (
     <div className="space-y-4">
       <p className="text-muted-foreground text-sm">{t('select_collections')}</p>
-      <p className="text-xs text-muted-foreground">{t('words_limit')}</p>
 
       <div className="space-y-2">
         {collections.map((col) => {
@@ -104,6 +150,18 @@ export function StudySetup({ collections }: StudySetupProps) {
           )
         })}
       </div>
+
+      {/* Counters */}
+      {selected.size > 0 && (
+        <div className="flex gap-4 text-sm text-muted-foreground">
+          <span>
+            {isCountPending
+              ? '…'
+              : t('scheduled_today', { count: scheduledCount })}
+          </span>
+          <span>{t('completed_today', { count: completedToday })}</span>
+        </div>
+      )}
 
       <button
         type="button"

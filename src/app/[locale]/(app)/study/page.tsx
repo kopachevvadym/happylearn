@@ -8,17 +8,34 @@ export default async function StudyPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
 
-  const { data: collectionsRaw } = await supabase
-    .from('collections')
-    .select('id, name, collection_words(count)')
-    .eq('user_id', user.id)
-    .order('is_default', { ascending: false })
-  const collections = (collectionsRaw ?? []) as unknown as { id: string; name: string; collection_words: { count: number }[] }[]
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  const [collectionsResult, completedResult] = await Promise.all([
+    supabase
+      .from('collections')
+      .select('id, name, collection_words(count)')
+      .eq('user_id', user.id)
+      .order('is_default', { ascending: false }),
+    supabase
+      .from('study_sessions')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      .gte('finished_at', today.toISOString())
+      .not('finished_at', 'is', null),
+  ])
+
+  const collections = (collectionsResult.data ?? []) as unknown as {
+    id: string
+    name: string
+    collection_words: { count: number }[]
+  }[]
+  const completedToday = completedResult.count ?? 0
 
   return (
     <div className="max-w-2xl mx-auto space-y-4">
       <h1 className="text-2xl font-bold">{t('title')}</h1>
-      <StudySetup collections={collections} />
+      <StudySetup collections={collections} completedToday={completedToday} />
     </div>
   )
 }

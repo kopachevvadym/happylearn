@@ -3,6 +3,7 @@
 import { useState, useRef } from 'react'
 import { useTranslations } from 'next-intl'
 import type { StudyCard } from '@/types'
+import { levenshteinDistance } from '@/lib/utils/levenshtein'
 
 interface WriteCardProps {
   word: StudyCard['word']
@@ -34,7 +35,7 @@ export function WriteCard({ word, onAnswer, disabled }: WriteCardProps) {
   const inputNorm = normalize(input)
   const correctNorm = normalize(correct)
   const isExact = inputNorm === correctNorm
-  const isClose = !isExact && correctNorm.startsWith(inputNorm.slice(0, Math.max(3, Math.floor(correctNorm.length * 0.7))))
+  const isClose = !isExact && levenshteinDistance(inputNorm, correctNorm) <= 2
 
   return (
     <div className="space-y-4">
