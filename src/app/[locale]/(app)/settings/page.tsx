@@ -17,7 +17,7 @@ export default async function SettingsPage() {
     supabase.from('users').select('*').eq('id', user.id).single(),
     supabase
       .from('api_keys')
-      .select('id, name, last_used_at, created_at')
+      .select('id, name, prefix, last_used_at, created_at')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false }),
   ])

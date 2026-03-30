@@ -71,10 +71,11 @@ export async function createApiKey(name: string) {
   if (!user) return { error: 'Unauthorized' }
 
   const key = `hl_${randomBytes(32).toString('hex')}`
+  const prefix = key.substring(0, 10)
 
   const { data, error } = await supabase
     .from('api_keys')
-    .insert({ user_id: user.id, name, key })
+    .insert({ user_id: user.id, name, key, prefix })
     .select()
     .single()
 

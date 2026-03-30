@@ -309,7 +309,10 @@
       "save": "Save"
     },
     "apiKeys": {
+      "title": "API Keys",
+      "description": "Allow third-party apps to access your words and collections. The key is shown only once.",
       "name": "Name",
+      "prefix": "Prefix",
       "keyName": "Key name",
       "create": "Create",
       "noKeys": "No keys",
@@ -318,8 +321,35 @@
       "copied": "Copied!",
       "delete": "Delete",
       "deleteConfirm": "Delete key \"{name}\"?",
+      "deleteDesc": "Apps using this key will lose access.",
       "created": "Created",
-      "lastUsed": "Last used"
+      "lastUsed": "Last used",
+      "never": "—",
+      "newKeyTitle": "API key created",
+      "newKeyDesc": "Save the key now — it won't be shown again.",
+      "understood": "Got it",
+      "docs": "API Documentation",
+      "baseUrl": "Base URL",
+      "authHeader": "Add your API key to the header of every request",
+      "selectKey": "Select key",
+      "noKeysForTester": "Create an API key to test requests",
+      "executeRequest": "Execute request",
+      "executing": "Executing...",
+      "response": "Response",
+      "body": "Body (JSON)",
+      "endpoints": {
+        "getWords": "Get all words",
+        "postWords": "Add a word",
+        "putWords": "Update a word",
+        "deleteWords": "Delete a word",
+        "getCollections": "Get all collections",
+        "postCollections": "Create a collection",
+        "getCollection": "Get collection with words",
+        "getPublicCollections": "Public collections (no auth)",
+        "getMe": "Profile data",
+        "export": "Export all words (JSON)",
+        "import": "Import words"
+      }
     },
     "importExport": {
       "export": "Export",

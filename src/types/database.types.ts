@@ -289,6 +289,7 @@ export type Database = {
           id: string
           user_id: string
           key: string
+          prefix: string
           name: string
           last_used_at: string | null
           created_at: string
@@ -297,6 +298,7 @@ export type Database = {
           id?: string
           user_id: string
           key: string
+          prefix?: string
           name: string
           last_used_at?: string | null
           created_at?: string
@@ -305,6 +307,7 @@ export type Database = {
           id?: string
           user_id?: string
           key?: string
+          prefix?: string
           name?: string
           last_used_at?: string | null
           created_at?: string
