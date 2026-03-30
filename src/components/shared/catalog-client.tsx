@@ -13,6 +13,7 @@ type CatalogCollection = {
   source_lang: string
   target_lang: string
   created_at: string
+  user_id: string
   users: { username: string; avatar_url: string | null } | null
   collection_words: { count: number }[]
   collection_follows: { count: number }[]
@@ -22,9 +23,10 @@ interface CatalogClientProps {
   collections: CatalogCollection[]
   followedIds: Set<string>
   isLoggedIn: boolean
+  currentUserId: string | null
 }
 
-export function CatalogClient({ collections, followedIds: initialFollowed, isLoggedIn }: CatalogClientProps) {
+export function CatalogClient({ collections, followedIds: initialFollowed, isLoggedIn, currentUserId }: CatalogClientProps) {
   const t = useTranslations('catalog')
   const [search, setSearch] = useState('')
   const [langFilter, setLangFilter] = useState('')
@@ -147,17 +149,19 @@ export function CatalogClient({ collections, followedIds: initialFollowed, isLog
                   </a>
                 )}
               </div>
-              <button
-                onClick={() => handleFollowToggle(col.id)}
-                disabled={isPending}
-                className={`w-full h-9 rounded-lg text-sm font-medium transition-colors ${
-                  isFollowed
-                    ? 'border-2 border-border hover:bg-accent'
-                    : 'bg-primary text-primary-foreground hover:bg-primary/90'
-                } disabled:opacity-60`}
-              >
-                {isFollowed ? 'Відписатись' : isLoggedIn ? 'Підписатись' : t('login_to_follow')}
-              </button>
+              {currentUserId !== col.user_id && (
+                <button
+                  onClick={() => handleFollowToggle(col.id)}
+                  disabled={isPending}
+                  className={`w-full h-9 rounded-lg text-sm font-medium transition-colors ${
+                    isFollowed
+                      ? 'border-2 border-border hover:bg-accent'
+                      : 'bg-primary text-primary-foreground hover:bg-primary/90'
+                  } disabled:opacity-60`}
+                >
+                  {isFollowed ? 'Відписатись' : isLoggedIn ? 'Підписатись' : t('login_to_follow')}
+                </button>
+              )}
             </div>
           )
         })}

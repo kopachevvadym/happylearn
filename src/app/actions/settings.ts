@@ -145,14 +145,19 @@ export async function importWords(
 
   const { data: existing } = await supabase
     .from('words')
-    .select('word')
+    .select('word, source_lang, target_lang')
     .eq('user_id', user.id)
     .in('word', wordsData.map((w) => w.word))
 
-  const existingWords = new Set(existing?.map((e) => e.word) ?? [])
+  const existingKeys = new Set(
+    (existing ?? []).map((e) => `${e.word.toLowerCase()}__${e.source_lang}__${e.target_lang}`)
+  )
 
-  const toInsert = wordsData.filter((w) => !existingWords.has(w.word) || !skipDuplicates)
-  const toUpdate = wordsData.filter((w) => existingWords.has(w.word) && !skipDuplicates)
+  const key = (w: { word: string; source_lang: string; target_lang: string }) =>
+    `${w.word.toLowerCase()}__${w.source_lang}__${w.target_lang}`
+
+  const toInsert = wordsData.filter((w) => !existingKeys.has(key(w)))
+  const toUpdate = wordsData.filter((w) => existingKeys.has(key(w)) && !skipDuplicates)
 
   if (toInsert.length) {
     await supabase.from('words').insert(toInsert.map((w) => ({ ...w, user_id: user.id })))
@@ -165,10 +170,130 @@ export async function importWords(
         .update({ translations: w.translations, examples: w.examples })
         .eq('user_id', user.id)
         .eq('word', w.word)
+        .eq('source_lang', w.source_lang)
+        .eq('target_lang', w.target_lang)
     }
   }
 
   revalidatePath('/words')
   revalidatePath('/dashboard')
   return { success: true, inserted: toInsert.length, updated: toUpdate.length }
+}
+
+export async function analyzeImport(
+  wordsData: Array<{ word: string; source_lang: string; target_lang: string }>
+) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Unauthorized' as const }
+
+  const { data: existing } = await supabase
+    .from('words')
+    .select('word, source_lang, target_lang')
+    .eq('user_id', user.id)
+    .in('word', wordsData.map((w) => w.word))
+
+  const existingKeys = new Set(
+    (existing ?? []).map((e) => `${e.word.toLowerCase()}__${e.source_lang}__${e.target_lang}`)
+  )
+
+  const conflictKeys = wordsData
+    .filter((w) => existingKeys.has(`${w.word.toLowerCase()}__${w.source_lang}__${w.target_lang}`))
+    .map((w) => `${w.word.toLowerCase()}__${w.source_lang}__${w.target_lang}`)
+
+  return { conflictKeys }
+}
+
+export async function exportBackup() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Unauthorized' }
+
+  const { data: words, error } = await supabase
+    .from('words')
+    .select(`
+      word, translations, examples, source_lang, target_lang,
+      word_progress(ease_factor, interval, repetitions, next_review_at, is_learned)
+    `)
+    .eq('user_id', user.id)
+
+  if (error) return { error: error.message }
+
+  const backup = (words ?? []).map((w) => ({
+    word: w.word,
+    translations: w.translations,
+    examples: w.examples,
+    source_lang: w.source_lang,
+    target_lang: w.target_lang,
+    progress: (w.word_progress as unknown as Record<string, unknown>[])?.[0] ?? null,
+  }))
+
+  return { success: true, data: backup }
+}
+
+export async function importBackup(
+  wordsData: Array<{
+    word: string
+    translations: string[]
+    examples: string[]
+    source_lang: string
+    target_lang: string
+    progress?: {
+      ease_factor: number
+      interval: number
+      repetitions: number
+      next_review_at: string
+      is_learned: boolean
+    } | null
+  }>,
+  skipDuplicates: boolean
+) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Unauthorized' }
+
+  const plainWords = wordsData.map(({ progress: _p, ...w }) => w)
+  const importResult = await importWords(plainWords, skipDuplicates)
+  if (!importResult || 'error' in importResult) return importResult
+
+  // Restore progress for newly inserted words
+  const wordsWithProgress = wordsData.filter((w) => w.progress)
+  if (wordsWithProgress.length > 0) {
+    const { data: insertedWords } = await supabase
+      .from('words')
+      .select('id, word, source_lang, target_lang')
+      .eq('user_id', user.id)
+      .in('word', wordsWithProgress.map((w) => w.word))
+
+    if (insertedWords?.length) {
+      const progressRecords = insertedWords.flatMap((dbWord) => {
+        const source = wordsWithProgress.find(
+          (w) =>
+            w.word.toLowerCase() === dbWord.word.toLowerCase() &&
+            w.source_lang === dbWord.source_lang &&
+            w.target_lang === dbWord.target_lang
+        )
+        if (!source?.progress) return []
+        return [{
+          user_id: user.id,
+          word_id: dbWord.id,
+          ease_factor: source.progress.ease_factor,
+          interval: source.progress.interval,
+          repetitions: source.progress.repetitions,
+          next_review_at: source.progress.next_review_at,
+          is_learned: source.progress.is_learned,
+        }]
+      })
+
+      if (progressRecords.length > 0) {
+        await supabase
+          .from('word_progress')
+          .upsert(progressRecords, { onConflict: 'word_id' })
+      }
+    }
+  }
+
+  revalidatePath('/words')
+  revalidatePath('/dashboard')
+  return { success: true, inserted: importResult.inserted, updated: importResult.updated }
 }

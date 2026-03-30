@@ -4,6 +4,7 @@ import { useState, useRef } from 'react'
 import { useTranslations } from 'next-intl'
 import type { StudyCard } from '@/types'
 import { levenshteinDistance } from '@/lib/utils/levenshtein'
+import { normalizeAnswer } from '@/lib/utils/normalize'
 
 interface WriteCardProps {
   word: StudyCard['word']
@@ -17,9 +18,7 @@ export function WriteCard({ word, onAnswer, disabled }: WriteCardProps) {
   const [checked, setChecked] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  const correct = (word.translations as string[])[0]
-
-  const normalize = (s: string) => s.trim().toLowerCase()
+  const translations = (word.translations as string[]).map(normalizeAnswer)
 
   const check = () => {
     if (!input.trim()) return
@@ -32,10 +31,9 @@ export function WriteCard({ word, onAnswer, disabled }: WriteCardProps) {
     onAnswer(quality)
   }
 
-  const inputNorm = normalize(input)
-  const correctNorm = normalize(correct)
-  const isExact = inputNorm === correctNorm
-  const isClose = !isExact && levenshteinDistance(inputNorm, correctNorm) <= 2
+  const userAnswer = normalizeAnswer(input)
+  const isExact = translations.some((t) => t === userAnswer)
+  const isClose = !isExact && translations.some((t) => levenshteinDistance(userAnswer, t) <= 2)
 
   return (
     <div className="space-y-4">
@@ -86,7 +84,7 @@ export function WriteCard({ word, onAnswer, disabled }: WriteCardProps) {
             <p className="font-medium">{input}</p>
             {!isExact && (
               <p className="text-sm text-muted-foreground">
-                {t('write_correct_label')} <span className="font-semibold">{correct}</span>
+                {t('write_correct_label')} <span className="font-semibold">{(word.translations as string[])[0]}</span>
               </p>
             )}
           </div>

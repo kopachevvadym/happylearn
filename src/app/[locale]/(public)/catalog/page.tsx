@@ -9,10 +9,10 @@ export default async function CatalogPage() {
   // Get current user (optional)
   const { data: { user } } = await supabase.auth.getUser()
 
-  const { data: collectionsRaw } = await supabase
+  const query = supabase
     .from('collections')
     .select(`
-      id, name, description, source_lang, target_lang, created_at,
+      id, name, description, source_lang, target_lang, created_at, user_id,
       users(username, avatar_url),
       collection_words(count),
       collection_follows(count)
@@ -20,9 +20,15 @@ export default async function CatalogPage() {
     .eq('is_public', true)
     .order('created_at', { ascending: false })
     .limit(100)
+
+  if (user) {
+    query.neq('user_id', user.id)
+  }
+
+  const { data: collectionsRaw } = await query
   const collections = collectionsRaw as unknown as {
     id: string; name: string; description: string | null
-    source_lang: string; target_lang: string; created_at: string
+    source_lang: string; target_lang: string; created_at: string; user_id: string
     users: { username: string; avatar_url: string | null } | null
     collection_words: { count: number }[]
     collection_follows: { count: number }[]
@@ -45,6 +51,7 @@ export default async function CatalogPage() {
           collections={collections ?? []}
           followedIds={followedIds}
           isLoggedIn={!!user}
+          currentUserId={user?.id ?? null}
         />
     </div>
   )

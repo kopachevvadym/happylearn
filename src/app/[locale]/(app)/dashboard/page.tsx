@@ -1,10 +1,12 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { getTranslations } from 'next-intl/server'
-import { BookOpen, Flame, GraduationCap, Library, Plus } from 'lucide-react'
+import { BookOpen, Flame, GraduationCap, Library, Plus, Trophy } from 'lucide-react'
+import { ActivityHeatmap } from '@/components/shared/activity-heatmap'
 
 export default async function DashboardPage() {
   const t = await getTranslations('dashboard')
+  const tp = await getTranslations('progress')
   const supabase = await createClient()
   const {
     data: { user },
@@ -12,8 +14,9 @@ export default async function DashboardPage() {
 
   if (!user) return null
 
-  // Fetch data in parallel
-  const [profileRes, streakRes, wordsTodayRes, totalLearnedRes, collectionsRes] =
+  const startOfYear = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString()
+
+  const [profileRes, streakRes, wordsTodayRes, totalLearnedRes, collectionsRes, sessionsRes] =
     await Promise.all([
       supabase.from('users').select('daily_goal, username').eq('id', user.id).single(),
       supabase.from('user_streaks').select('*').eq('user_id', user.id).single(),
@@ -29,20 +32,43 @@ export default async function DashboardPage() {
         .eq('is_learned', true),
       supabase
         .from('collections')
-        .select('id, name, is_default')
+        .select(`
+          id, name, is_default,
+          collection_words(word_id, words(word_progress(is_learned, user_id)))
+        `)
         .eq('user_id', user.id)
-        .order('is_default', { ascending: false })
-        .limit(5),
+        .order('is_default', { ascending: false }),
+      supabase
+        .from('study_sessions')
+        .select('started_at, total_words')
+        .eq('user_id', user.id)
+        .gte('started_at', startOfYear)
+        .order('started_at'),
     ])
 
   const profile = profileRes.data as { daily_goal: number; username: string } | null
   const streak = streakRes.data as { current_streak: number } | null
-  const collections = collectionsRes.data as Array<{ id: string; name: string; is_default: boolean }> | null
+  const collections = collectionsRes.data as Array<{
+    id: string
+    name: string
+    is_default: boolean
+    collection_words: Array<{
+      word_id: string
+      words: { word_progress: Array<{ is_learned: boolean; user_id: string }> } | null
+    }>
+  }> | null
 
   const dailyGoal = profile?.daily_goal ?? 10
   const todayCount = wordsTodayRes.count ?? 0
   const learnedCount = totalLearnedRes.count ?? 0
   const currentStreak = streak?.current_streak ?? 0
+
+  // Build activity data for heatmap
+  const activityByDay: Record<string, number> = {}
+  sessionsRes.data?.forEach((s) => {
+    const day = s.started_at.slice(0, 10)
+    activityByDay[day] = (activityByDay[day] ?? 0) + s.total_words
+  })
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -94,6 +120,45 @@ export default async function DashboardPage() {
         </Link>
       </div>
 
+      {/* Activity heatmap */}
+      <div className="bg-card border border-border rounded-xl p-4">
+        <h2 className="font-semibold mb-4">{tp('activity_title')}</h2>
+        <ActivityHeatmap activityByDay={activityByDay} />
+      </div>
+
+      {/* Collections progress */}
+      {collections && collections.length > 0 && (
+        <div className="bg-card border border-border rounded-xl p-4">
+          <h2 className="font-semibold mb-4">{tp('collections_title')}</h2>
+          <div className="space-y-3">
+            {collections.map((col) => {
+              const total = col.collection_words.length
+              const learned = col.collection_words.filter((cw) =>
+                cw.words?.word_progress?.some(
+                  (wp) => wp.user_id === user.id && wp.is_learned
+                )
+              ).length
+              const pct = total > 0 ? Math.round((learned / total) * 100) : 0
+
+              return (
+                <div key={col.id} className="space-y-1">
+                  <div className="flex justify-between text-sm">
+                    <span>{col.name}</span>
+                    <span className="text-muted-foreground">{learned}/{total} ({pct}%)</span>
+                  </div>
+                  <div className="h-2 bg-muted rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-primary rounded-full transition-all"
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Collections */}
       <div>
         <div className="flex items-center justify-between mb-3">
@@ -103,7 +168,7 @@ export default async function DashboardPage() {
           </Link>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {collections?.map((col) => (
+          {collections?.slice(0, 5).map((col) => (
             <Link
               key={col.id}
               href={`/collections/${col.id}`}

@@ -8,7 +8,6 @@ import {
   BookOpen,
   Library,
   GraduationCap,
-  TrendingUp,
   Settings,
   Globe,
 } from 'lucide-react'
@@ -18,7 +17,6 @@ const navItems = [
   { href: '/words', icon: BookOpen, key: 'words' },
   { href: '/collections', icon: Library, key: 'collections' },
   { href: '/study', icon: GraduationCap, key: 'study' },
-  { href: '/progress', icon: TrendingUp, key: 'progress' },
   { href: '/settings', icon: Settings, key: 'settings' },
 ] as const
 
