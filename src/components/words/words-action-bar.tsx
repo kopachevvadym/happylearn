@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useRef, useEffect } from 'react'
 import { useTranslations } from 'next-intl'
 import { X, Languages, BookmarkPlus, CheckCircle2, Trash2, ChevronDown } from 'lucide-react'
 import {
@@ -16,6 +16,9 @@ type OpenPanel = 'lang' | 'collection' | 'delete' | null
 
 interface WordsActionBarProps {
   selectedIds: string[]
+  allSelected: boolean
+  someSelected: boolean
+  onToggleAll: () => void
   collections: { id: string; name: string }[]
   defaultSourceLang: string
   defaultTargetLang: string
@@ -25,6 +28,9 @@ interface WordsActionBarProps {
 
 export function WordsActionBar({
   selectedIds,
+  allSelected,
+  someSelected,
+  onToggleAll,
   collections,
   defaultSourceLang,
   defaultTargetLang,
@@ -36,6 +42,13 @@ export function WordsActionBar({
   const [sourceLang, setSourceLang] = useState(defaultSourceLang)
   const [targetLang, setTargetLang] = useState(defaultTargetLang)
   const [isPending, startTransition] = useTransition()
+  const checkboxRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (checkboxRef.current) {
+      checkboxRef.current.indeterminate = someSelected
+    }
+  }, [someSelected])
 
   const isVisible = selectedIds.length > 0
 
@@ -107,11 +120,21 @@ export function WordsActionBar({
         aria-hidden={!isVisible}
       >
         <div className="max-w-4xl mx-auto px-4 pb-4">
-          <div className="bg-card border border-border rounded-2xl shadow-xl p-3 flex items-center gap-2 flex-wrap">
-            {/* Selected count */}
-            <span className="text-sm font-medium shrink-0">
-              {t('selected', { count: selectedIds.length })}
-            </span>
+          <div className="bg-card border border-border rounded-2xl shadow-xl p-3 flex items-center gap-3">
+            {/* Select all checkbox */}
+            <label className="flex items-center gap-2 cursor-pointer select-none shrink-0">
+              <input
+                ref={checkboxRef}
+                type="checkbox"
+                checked={allSelected}
+                onChange={onToggleAll}
+                aria-label={t('selectAll')}
+                className="w-4 h-4 rounded accent-primary cursor-pointer"
+              />
+              <span className="text-sm font-medium">
+                {t('selected', { count: selectedIds.length })}
+              </span>
+            </label>
 
             <div className="ml-auto flex items-center gap-1.5 flex-wrap">
               {/* Change language */}
