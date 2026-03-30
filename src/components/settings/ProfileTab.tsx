@@ -31,7 +31,7 @@ export function ProfileTab({ profile }: ProfileTabProps) {
     try {
       const supabase = createClient()
       const ext = file.name.split('.').pop()
-      const path = `${profile.id}.${ext}`
+      const path = `${profile.id}/${Date.now()}.${ext}`
 
       const { error: uploadError } = await supabase.storage
         .from('avatars')
