@@ -57,7 +57,7 @@ export function UserMenu({ user }: UserMenuProps) {
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-52 rounded-md p-1.5 space-y-0.5">
-        <DropdownMenuItem className="py-1.5 px-2.5 rounded-sm" onClick={() => router.push('/profile')}>
+        <DropdownMenuItem className="py-1.5 px-2.5 rounded-sm" onClick={() => router.push(`/profile/${user.username}`)}>
           <User className="w-4 h-4 mr-2" />
           {t('profile')}
         </DropdownMenuItem>

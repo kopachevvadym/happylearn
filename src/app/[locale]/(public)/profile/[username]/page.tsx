@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getTranslations } from 'next-intl/server'
 import Link from 'next/link'
-import { Flame, BookOpen, ChevronLeft } from 'lucide-react'
+import { Flame, BookOpen } from 'lucide-react'
 import { SUPPORTED_LANGUAGES } from '@/types'
 
 // ─── Badge emoji map ──────────────────────────────────────────────────────────
@@ -105,15 +105,6 @@ export default async function ProfilePage({
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
-      {/* Back */}
-      <Link
-        href={`/${locale}/catalog`}
-        className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
-      >
-        <ChevronLeft className="w-4 h-4" />
-        {t('back')}
-      </Link>
-
       {/* Profile header */}
       <div className="flex items-start gap-6">
         {/* Avatar */}
@@ -142,7 +133,7 @@ export default async function ProfilePage({
           )}
 
           <p className="text-sm text-muted-foreground mt-2">
-            {sourceLang} → {targetLang}
+            {targetLang} → {sourceLang}
           </p>
 
           <div className="flex items-center gap-4 mt-3 flex-wrap">
