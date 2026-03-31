@@ -19,7 +19,7 @@ export function MergeDuplicatesButton({ count, onSuccess }: MergeDuplicatesButto
     startTransition(async () => {
       const result = await mergeDuplicates()
       if ('mergedCount' in result) {
-        onSuccess(t('mergeSuccess', { merged: result.mergedCount, groups: result.groupsCount }))
+        onSuccess(t('mergeSuccess', { merged: result.mergedCount ?? 0, groups: result.groupsCount ?? 0 }))
       }
       setShowConfirm(false)
     })

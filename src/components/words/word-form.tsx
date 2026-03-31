@@ -68,7 +68,7 @@ export function WordForm({ word, defaultSourceLang, defaultTargetLang, onSubmit,
       if (result?.error) {
         setError(result.error)
       } else {
-        setBulkResult(t('bulk_added', { count: result.count }))
+        setBulkResult(t('bulk_added', { count: result.count ?? 0 }))
         setBulkText('')
       }
     })
