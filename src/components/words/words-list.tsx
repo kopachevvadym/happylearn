@@ -2,7 +2,7 @@
 
 import { useState, useTransition, useRef, useEffect, useCallback } from 'react'
 import { useTranslations } from 'next-intl'
-import { Plus, Search, Pencil, Trash2, BookmarkPlus, AlertTriangle } from 'lucide-react'
+import { Plus, Search, X, Pencil, Trash2, BookmarkPlus, AlertTriangle } from 'lucide-react'
 import { addWord, updateWord, deleteWord, addWordToCollections } from '@/app/actions/words'
 import type { Word } from '@/types'
 import { SUPPORTED_LANGUAGES } from '@/types'
@@ -117,8 +117,18 @@ export function WordsList({
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t('search_placeholder')}
             aria-label={tCommon('search')}
-            className="w-full h-10 pl-9 pr-3 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+            className="w-full h-10 pl-9 pr-8 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
           />
+          {search && (
+            <button
+              type="button"
+              aria-label={tCommon('clear')}
+              onClick={() => setSearch('')}
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <X aria-hidden="true" className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
 
         <button
@@ -134,6 +144,7 @@ export function WordsList({
       {/* Add word form */}
       {showAddForm && (
         <WordForm
+          initialWord={search}
           defaultSourceLang={defaultSourceLang}
           defaultTargetLang={defaultTargetLang}
           onSubmit={async (formData) => {

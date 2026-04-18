@@ -9,16 +9,18 @@ import { addWordsBulk } from '@/app/actions/words'
 
 interface WordFormProps {
   word?: Word
+  initialWord?: string
   defaultSourceLang: string
   defaultTargetLang: string
   onSubmit: (formData: FormData) => Promise<{ error?: string; success?: boolean } | undefined>
   onCancel: () => void
 }
 
-export function WordForm({ word, defaultSourceLang, defaultTargetLang, onSubmit, onCancel }: WordFormProps) {
+export function WordForm({ word, initialWord, defaultSourceLang, defaultTargetLang, onSubmit, onCancel }: WordFormProps) {
   const t = useTranslations('words')
   const tCommon = useTranslations('common')
   const [mode, setMode] = useState<'single' | 'bulk'>('single')
+  const [wordValue, setWordValue] = useState(word?.word ?? initialWord ?? '')
   const [translations, setTranslations] = useState<string[]>(
     (word?.translations as string[]) ?? ['']
   )
@@ -156,34 +158,61 @@ export function WordForm({ word, defaultSourceLang, defaultTargetLang, onSubmit,
               {t('word_field')}
               <span aria-hidden="true" className="text-destructive ml-0.5">*</span>
             </label>
-            <input
-              id="word-input"
-              name="word"
-              defaultValue={word?.word}
-              required
-              className="w-full h-10 px-3 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-              placeholder="apple"
-            />
+            <div className="relative">
+              <input
+                id="word-input"
+                name="word"
+                value={wordValue}
+                onChange={(e) => setWordValue(e.target.value)}
+                required
+                className="w-full h-10 px-3 pr-8 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                placeholder="apple"
+              />
+              {wordValue && (
+                <button
+                  type="button"
+                  aria-label={tCommon('clear')}
+                  onClick={() => setWordValue('')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <X aria-hidden="true" className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
           </div>
-
-          {langSelectors}
 
           <div className="space-y-2">
             <label htmlFor="translation-0" className="text-sm font-medium">{t('translations_field')}</label>
             {translations.map((tr, i) => (
               <div key={i} className="flex gap-2">
-                <input
-                  id={i === 0 ? 'translation-0' : undefined}
-                  aria-label={i > 0 ? `${t('translations_field')} ${i + 1}` : undefined}
-                  value={tr}
-                  onChange={(e) => {
-                    const updated = [...translations]
-                    updated[i] = e.target.value
-                    setTranslations(updated)
-                  }}
-                  className="flex-1 h-10 px-3 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                  placeholder={t('translation_placeholder')}
-                />
+                <div className="relative flex-1">
+                  <input
+                    id={i === 0 ? 'translation-0' : undefined}
+                    aria-label={i > 0 ? `${t('translations_field')} ${i + 1}` : undefined}
+                    value={tr}
+                    onChange={(e) => {
+                      const updated = [...translations]
+                      updated[i] = e.target.value
+                      setTranslations(updated)
+                    }}
+                    className="w-full h-10 px-3 pr-8 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                    placeholder={t('translation_placeholder')}
+                  />
+                  {tr && (
+                    <button
+                      type="button"
+                      aria-label={tCommon('clear')}
+                      onClick={() => {
+                        const updated = [...translations]
+                        updated[i] = ''
+                        setTranslations(updated)
+                      }}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      <X aria-hidden="true" className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
                 {translations.length > 1 && (
                   <button
                     type="button"
@@ -243,6 +272,8 @@ export function WordForm({ word, defaultSourceLang, defaultTargetLang, onSubmit,
               {t('add_example')}
             </button>
           </div>
+
+          {langSelectors}
 
           <div className="flex gap-3 pt-2">
             <button
