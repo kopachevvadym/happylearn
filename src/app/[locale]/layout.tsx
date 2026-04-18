@@ -4,6 +4,7 @@ import { getMessages } from 'next-intl/server'
 import { ThemeProvider } from 'next-themes'
 import { notFound } from 'next/navigation'
 import { routing } from '@/i18n/routing'
+import { QueryProvider } from '@/providers/query-provider'
 
 export const metadata: Metadata = {
   title: 'happylearn.club — Learn words with joy',
@@ -30,7 +31,9 @@ export default async function LocaleLayout({
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
       <NextIntlClientProvider messages={messages}>
-        {children}
+        <QueryProvider>
+          {children}
+        </QueryProvider>
       </NextIntlClientProvider>
     </ThemeProvider>
   )

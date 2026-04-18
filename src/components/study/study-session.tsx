@@ -16,6 +16,7 @@ import { QuizCard } from './quiz-card'
 import { WriteCard } from './write-card'
 import { SessionResults } from './session-results'
 import { ScheduleComplete } from './schedule-complete'
+import { DebugCardPanel } from './debug-card-panel'
 
 type Phase = 'studying' | 'batch_results' | 'schedule_complete'
 
@@ -24,6 +25,7 @@ interface StudySessionProps {
   sessionId: string
   collectionIds: string[]
   scheduledCount: number
+  debugMode?: boolean
   onFinish: () => void
 }
 
@@ -32,6 +34,7 @@ export function StudySession({
   sessionId: initialSessionId,
   collectionIds,
   scheduledCount,
+  debugMode = false,
   onFinish,
 }: StudySessionProps) {
   const t = useTranslations('study')
@@ -244,6 +247,8 @@ export function StudySession({
       {currentCard.format === 'write' && (
         <WriteCard word={currentCard.word} onAnswer={handleAnswer} disabled={isPending} />
       )}
+
+      {debugMode && <DebugCardPanel card={currentCard} />}
     </div>
   )
 }

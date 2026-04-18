@@ -8,6 +8,7 @@ import type { StudyCard } from '@/types'
 import { StudySession } from './study-session'
 
 const STORAGE_KEY = 'study_selected_collections'
+const DEBUG_KEY = 'study_debug_mode'
 
 interface StudySetupProps {
   collections: {
@@ -27,11 +28,12 @@ export function StudySetup({ collections, completedToday }: StudySetupProps) {
   const [cards, setCards] = useState<StudyCard[] | null>(null)
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [activeCollectionIds, setActiveCollectionIds] = useState<string[]>([])
+  const [debugMode, setDebugMode] = useState(false)
 
   const [isPending, startTransition] = useTransition()
   const [isCountPending, startCountTransition] = useTransition()
 
-  // Load saved selection from localStorage
+  // Load saved selection and debug mode from localStorage
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY)
@@ -40,6 +42,11 @@ export function StudySetup({ collections, completedToday }: StudySetupProps) {
         const valid = ids.filter((id) => collections.some((c) => c.id === id))
         if (valid.length) setSelected(new Set(valid))
       }
+    } catch {
+      // ignore
+    }
+    try {
+      setDebugMode(localStorage.getItem(DEBUG_KEY) === 'true')
     } catch {
       // ignore
     }
@@ -115,6 +122,7 @@ export function StudySetup({ collections, completedToday }: StudySetupProps) {
         sessionId={sessionId}
         collectionIds={activeCollectionIds}
         scheduledCount={scheduledCount}
+        debugMode={debugMode}
         onFinish={() => setCards(null)}
       />
     )

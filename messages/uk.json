@@ -204,7 +204,19 @@
     "write_incorrect": "Неправильно",
     "write_almost": "Майже",
     "quit_session": "Вийти",
-    "quit_confirm": "Вийти з сесії? Прогрес не буде збережено."
+    "quit_confirm": "Вийти з сесії? Прогрес не буде збережено.",
+    "debug_format": "Формат",
+    "debug_repetitions": "повторень",
+    "debug_to_next": "До {next}",
+    "debug_steps_remaining": "{count, plural, one {ще # правильна відповідь} few {ще # правильних відповіді} many {ще # правильних відповідей} other {ще # правильних відповідей}}",
+    "debug_to_learned": "До «вивчено»",
+    "debug_already_learned": "Слово вивчено",
+    "debug_sm2_now": "SM-2 зараз",
+    "debug_next_review": "Наступний показ",
+    "debug_preview": "Після відповіді",
+    "debug_correct": "Правильно",
+    "debug_incorrect": "Неправильно",
+    "debug_reset": "скидання"
   },
   "progress": {
     "title": "Прогрес",
@@ -280,7 +292,8 @@
       "languages": "Мови",
       "appearance": "Вигляд",
       "apiKeys": "API ключі",
-      "importExport": "Імпорт / Експорт"
+      "importExport": "Імпорт / Експорт",
+      "study": "Навчання"
     },
     "profile": {
       "username": "Нікнейм",
@@ -369,6 +382,10 @@
       "importAll": "Оновити існуючі",
       "importSuccess": "Імпортовано {count} слів",
       "cancel": "Скасувати"
+    },
+    "study": {
+      "debugMode": "Режим налагодження",
+      "debugModeDesc": "Показує SM-2 дані та прогрес формату під кожною карткою під час сесії"
     }
   },
   "UserMenu": {

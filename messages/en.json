@@ -204,7 +204,19 @@
     "write_incorrect": "Incorrect",
     "write_almost": "Almost",
     "quit_session": "Quit",
-    "quit_confirm": "Quit this session? Your progress won't be saved."
+    "quit_confirm": "Quit this session? Your progress won't be saved.",
+    "debug_format": "Format",
+    "debug_repetitions": "repetitions",
+    "debug_to_next": "To {next}",
+    "debug_steps_remaining": "{count, plural, one {# correct answer left} other {# correct answers left}}",
+    "debug_to_learned": "To learned",
+    "debug_already_learned": "Word learned",
+    "debug_sm2_now": "SM-2 now",
+    "debug_next_review": "Next review",
+    "debug_preview": "After answer",
+    "debug_correct": "Correct",
+    "debug_incorrect": "Incorrect",
+    "debug_reset": "reset"
   },
   "progress": {
     "title": "Progress",
@@ -280,7 +292,8 @@
       "languages": "Languages",
       "appearance": "Appearance",
       "apiKeys": "API Keys",
-      "importExport": "Import / Export"
+      "importExport": "Import / Export",
+      "study": "Study"
     },
     "profile": {
       "username": "Username",
@@ -369,6 +382,10 @@
       "importAll": "Update existing",
       "importSuccess": "Imported {count} words",
       "cancel": "Cancel"
+    },
+    "study": {
+      "debugMode": "Debug mode",
+      "debugModeDesc": "Shows SM-2 data and format progress under each card during a session"
     }
   },
   "UserMenu": {
