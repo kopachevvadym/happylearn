@@ -176,3 +176,22 @@
     }
   }
 }
+
+/* cal-heatmap — match app design tokens */
+.ch-domain-text,
+.ch-plugin-calendar-label text {
+  fill: var(--muted-foreground) !important;
+  font-family: var(--font-sans);
+  font-size: 10px;
+}
+
+#ch-tooltip {
+  background: var(--popover) !important;
+  color: var(--popover-foreground) !important;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  padding: 4px 10px;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+}

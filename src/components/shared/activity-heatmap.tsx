@@ -1,8 +1,11 @@
 'use client'
 
-import { useMemo } from 'react'
-import { ActivityCalendar, type ColorScheme } from 'react-activity-calendar'
+import { useEffect, useRef } from 'react'
 import { useTheme } from 'next-themes'
+import CalHeatmap from 'cal-heatmap'
+import Tooltip from 'cal-heatmap/plugins/Tooltip'
+import CalendarLabel from 'cal-heatmap/plugins/CalendarLabel'
+import 'cal-heatmap/cal-heatmap.css'
 
 interface ActivityHeatmapProps {
   activityByDay: Record<string, number>
@@ -11,56 +14,100 @@ interface ActivityHeatmapProps {
 
 export function ActivityHeatmap({ activityByDay, weekdays }: ActivityHeatmapProps) {
   const { resolvedTheme } = useTheme()
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const calRef = useRef<CalHeatmap | null>(null)
 
-  const data = useMemo(() => {
+  useEffect(() => {
+    if (!containerRef.current) return
+
+    calRef.current?.destroy()
+
+    const isDark = resolvedTheme === 'dark'
+
+    const data = Object.entries(activityByDay).map(([date, value]) => ({
+      date: new Date(date).getTime(),
+      value,
+    }))
+
     const end = new Date()
     end.setHours(0, 0, 0, 0)
-
     const start = new Date(end)
     start.setFullYear(end.getFullYear() - 1)
     start.setDate(start.getDate() + 1)
 
-    const toLocalDateKey = (d: Date) => {
-      const y = d.getFullYear()
-      const m = String(d.getMonth() + 1).padStart(2, '0')
-      const day = String(d.getDate()).padStart(2, '0')
-      return `${y}-${m}-${day}`
+    const cal = new CalHeatmap()
+    calRef.current = cal
+
+    cal.paint(
+      {
+        itemSelector: containerRef.current,
+        theme: isDark ? 'dark' : 'light',
+        date: {
+          start,
+          locale: { weekStart: 1 },
+        },
+        range: 13,
+        domain: { type: 'month', gutter: 4 },
+        subDomain: { type: 'day', width: 12, height: 12, gutter: 2 },
+        data: {
+          source: data,
+          x: 'date',
+          y: 'value',
+          defaultValue: 0,
+        },
+        scale: {
+          color: {
+            range: isDark
+              ? ['#1f2937', '#14532d', '#15803d', '#22c55e', '#86efac']
+              : ['#f1f5f9', '#bbf7d0', '#4ade80', '#16a34a', '#14532d'],
+            interpolate: 'rgb',
+            type: 'threshold',
+            domain: [1, 5, 15, 30],
+          },
+        },
+      },
+      [
+        [
+          Tooltip,
+          {
+            enabled: true,
+            text: (_ts: number, value: number | null, d: { format: (f: string) => string }) => {
+              const date = d.format('YYYY-MM-DD')
+              if (!value) return `0 слів — ${date}`
+              const word = value === 1 ? 'слово' : value < 5 ? 'слова' : 'слів'
+              return `${value} ${word} — ${date}`
+            },
+          },
+        ],
+        [
+          CalendarLabel,
+          {
+            width: 30,
+            textAlign: 'start',
+            text: () => weekdays,
+            padding: [0, 4, 0, 0],
+          },
+        ],
+      ],
+    )
+
+    // Scroll to the right so the most recent data is visible
+    requestAnimationFrame(() => {
+      if (scrollRef.current) {
+        scrollRef.current.scrollLeft = scrollRef.current.scrollWidth
+      }
+    })
+
+    return () => {
+      cal.destroy()
+      calRef.current = null
     }
-
-    const result: { date: string; count: number; level: number }[] = []
-    const cursor = new Date(start)
-
-    while (cursor <= end) {
-      const key = toLocalDateKey(cursor)
-      const count = activityByDay[key] ?? 0
-      const level =
-        count === 0 ? 0 : count < 5 ? 1 : count < 15 ? 2 : count < 30 ? 3 : 4
-      result.push({ date: key, count, level })
-      cursor.setDate(cursor.getDate() + 1)
-    }
-
-    return result
-  }, [activityByDay])
+  }, [resolvedTheme, activityByDay, weekdays])
 
   return (
-    <ActivityCalendar
-      data={data}
-      weekStart={1}
-      showWeekdayLabels
-      colorScheme={(resolvedTheme as ColorScheme) ?? 'light'}
-      labels={{ weekdays }}
-      theme={{
-        light: ['#e5e7eb', '#bbf7d0', '#4ade80', '#16a34a', '#14532d'],
-        dark: ['#374151', '#14532d', '#15803d', '#22c55e', '#86efac'],
-      }}
-      tooltips={{
-        activity: {
-          text: (activity) =>
-            activity.count === 0
-              ? `0 слів — ${activity.date}`
-              : `${activity.count} ${activity.count === 1 ? 'слово' : activity.count < 5 ? 'слова' : 'слів'} — ${activity.date}`,
-        },
-      }}
-    />
+    <div ref={scrollRef} className="overflow-x-auto">
+      <div ref={containerRef} className="pl-8" />
+    </div>
   )
 }
