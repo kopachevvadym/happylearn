@@ -63,10 +63,11 @@ export default async function DashboardPage() {
   const learnedCount = totalLearnedRes.count ?? 0
   const currentStreak = streak?.current_streak ?? 0
 
-  // Build activity data for heatmap
+  // Build activity data for heatmap — convert UTC timestamps to local date keys
   const activityByDay: Record<string, number> = {}
   sessionsRes.data?.forEach((s) => {
-    const day = s.started_at.slice(0, 10)
+    const d = new Date(s.started_at)
+    const day = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
     activityByDay[day] = (activityByDay[day] ?? 0) + s.total_words
   })
 
@@ -123,7 +124,18 @@ export default async function DashboardPage() {
       {/* Activity heatmap */}
       <div className="bg-card border border-border rounded-xl p-4">
         <h2 className="font-semibold mb-4">{tp('activity_title')}</h2>
-        <ActivityHeatmap activityByDay={activityByDay} />
+        <ActivityHeatmap
+          activityByDay={activityByDay}
+          weekdays={[
+            tp('weekday_sun'),
+            tp('weekday_mon'),
+            tp('weekday_tue'),
+            tp('weekday_wed'),
+            tp('weekday_thu'),
+            tp('weekday_fri'),
+            tp('weekday_sat'),
+          ]}
+        />
       </div>
 
       {/* Collections progress */}

@@ -229,7 +229,14 @@
     "activity_title": "Activity",
     "collections_title": "Collections progress",
     "percent_learned": "{percent}% learned",
-    "no_activity": "No activity yet"
+    "no_activity": "No activity yet",
+    "weekday_sun": "Sun",
+    "weekday_mon": "Mon",
+    "weekday_tue": "Tue",
+    "weekday_wed": "Wed",
+    "weekday_thu": "Thu",
+    "weekday_fri": "Fri",
+    "weekday_sat": "Sat"
   },
   "catalog": {
     "title": "Collection Catalog",

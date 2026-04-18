@@ -229,7 +229,14 @@
     "activity_title": "Активність",
     "collections_title": "Прогрес по збірках",
     "percent_learned": "{percent}% вивчено",
-    "no_activity": "Ще немає активності"
+    "no_activity": "Ще немає активності",
+    "weekday_sun": "Нд",
+    "weekday_mon": "Пн",
+    "weekday_tue": "Вт",
+    "weekday_wed": "Ср",
+    "weekday_thu": "Чт",
+    "weekday_fri": "Пт",
+    "weekday_sat": "Сб"
   },
   "catalog": {
     "title": "Каталог збірок",

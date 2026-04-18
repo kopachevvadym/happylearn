@@ -6,6 +6,7 @@ import { useTheme } from 'next-themes'
 
 interface ActivityHeatmapProps {
   activityByDay: Record<string, number>
+  weekdays: string[]
 }
 
 export function ActivityHeatmap({ activityByDay, weekdays }: ActivityHeatmapProps) {
@@ -47,6 +48,7 @@ export function ActivityHeatmap({ activityByDay, weekdays }: ActivityHeatmapProp
       weekStart={1}
       showWeekdayLabels
       colorScheme={(resolvedTheme as ColorScheme) ?? 'light'}
+      labels={{ weekdays }}
       theme={{
         light: ['#e5e7eb', '#bbf7d0', '#4ade80', '#16a34a', '#14532d'],
         dark: ['#374151', '#14532d', '#15803d', '#22c55e', '#86efac'],
