@@ -1,13 +1,16 @@
 'use client'
 
 import { useMemo } from 'react'
-import { ActivityCalendar } from 'react-activity-calendar'
+import { ActivityCalendar, type ColorScheme } from 'react-activity-calendar'
+import { useTheme } from 'next-themes'
 
 interface ActivityHeatmapProps {
   activityByDay: Record<string, number>
 }
 
-export function ActivityHeatmap({ activityByDay }: ActivityHeatmapProps) {
+export function ActivityHeatmap({ activityByDay, weekdays }: ActivityHeatmapProps) {
+  const { resolvedTheme } = useTheme()
+
   const data = useMemo(() => {
     const end = new Date()
     end.setHours(0, 0, 0, 0)
@@ -43,10 +46,7 @@ export function ActivityHeatmap({ activityByDay }: ActivityHeatmapProps) {
       data={data}
       weekStart={1}
       showWeekdayLabels
-      hideTotalCount
-      labels={{
-        weekdays: ['Нд', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'],
-      }}
+      colorScheme={(resolvedTheme as ColorScheme) ?? 'light'}
       theme={{
         light: ['#e5e7eb', '#bbf7d0', '#4ade80', '#16a34a', '#14532d'],
         dark: ['#374151', '#14532d', '#15803d', '#22c55e', '#86efac'],
