@@ -1,55 +1,64 @@
 'use client'
 
 import { useMemo } from 'react'
+import { ActivityCalendar } from 'react-activity-calendar'
 
 interface ActivityHeatmapProps {
   activityByDay: Record<string, number>
 }
 
 export function ActivityHeatmap({ activityByDay }: ActivityHeatmapProps) {
-  const weeks = useMemo(() => {
-    const today = new Date()
-    const days: { date: string; count: number }[] = []
+  const data = useMemo(() => {
+    const end = new Date()
+    end.setHours(0, 0, 0, 0)
 
-    // Build 52 weeks of days
-    for (let i = 364; i >= 0; i--) {
-      const d = new Date(today)
-      d.setDate(today.getDate() - i)
-      const key = d.toISOString().slice(0, 10)
-      days.push({ date: key, count: activityByDay[key] ?? 0 })
+    const start = new Date(end)
+    start.setFullYear(end.getFullYear() - 1)
+    start.setDate(start.getDate() + 1)
+
+    const toLocalDateKey = (d: Date) => {
+      const y = d.getFullYear()
+      const m = String(d.getMonth() + 1).padStart(2, '0')
+      const day = String(d.getDate()).padStart(2, '0')
+      return `${y}-${m}-${day}`
     }
 
-    // Group into weeks
-    const result: typeof days[] = []
-    for (let i = 0; i < days.length; i += 7) {
-      result.push(days.slice(i, i + 7))
+    const result: { date: string; count: number; level: number }[] = []
+    const cursor = new Date(start)
+
+    while (cursor <= end) {
+      const key = toLocalDateKey(cursor)
+      const count = activityByDay[key] ?? 0
+      const level =
+        count === 0 ? 0 : count < 5 ? 1 : count < 15 ? 2 : count < 30 ? 3 : 4
+      result.push({ date: key, count, level })
+      cursor.setDate(cursor.getDate() + 1)
     }
+
     return result
   }, [activityByDay])
 
-  const getColor = (count: number) => {
-    if (count === 0) return 'bg-muted'
-    if (count < 5) return 'bg-green-200 dark:bg-green-900'
-    if (count < 15) return 'bg-green-400 dark:bg-green-700'
-    if (count < 30) return 'bg-green-600 dark:bg-green-500'
-    return 'bg-green-800 dark:bg-green-300'
-  }
-
   return (
-    <div className="overflow-x-auto">
-      <div className="flex gap-1 min-w-max">
-        {weeks.map((week, wi) => (
-          <div key={wi} className="flex flex-col gap-1">
-            {week.map((day, di) => (
-              <div
-                key={di}
-                title={`${day.date}: ${day.count} слів`}
-                className={`w-3 h-3 rounded-sm ${getColor(day.count)}`}
-              />
-            ))}
-          </div>
-        ))}
-      </div>
-    </div>
+    <ActivityCalendar
+      data={data}
+      weekStart={1}
+      showWeekdayLabels
+      hideTotalCount
+      labels={{
+        weekdays: ['Нд', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'],
+      }}
+      theme={{
+        light: ['#e5e7eb', '#bbf7d0', '#4ade80', '#16a34a', '#14532d'],
+        dark: ['#374151', '#14532d', '#15803d', '#22c55e', '#86efac'],
+      }}
+      tooltips={{
+        activity: {
+          text: (activity) =>
+            activity.count === 0
+              ? `0 слів — ${activity.date}`
+              : `${activity.count} ${activity.count === 1 ? 'слово' : activity.count < 5 ? 'слова' : 'слів'} — ${activity.date}`,
+        },
+      }}
+    />
   )
 }
