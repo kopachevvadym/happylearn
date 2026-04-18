@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import { NextIntlClientProvider } from 'next-intl'
 import { getMessages } from 'next-intl/server'
-import { ThemeProvider } from 'next-themes'
 import { notFound } from 'next/navigation'
 import { routing } from '@/i18n/routing'
 import { QueryProvider } from '@/providers/query-provider'
@@ -29,12 +28,10 @@ export default async function LocaleLayout({
   const messages = await getMessages()
 
   return (
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-      <NextIntlClientProvider messages={messages}>
-        <QueryProvider>
-          {children}
-        </QueryProvider>
-      </NextIntlClientProvider>
-    </ThemeProvider>
+    <NextIntlClientProvider messages={messages}>
+      <QueryProvider>
+        {children}
+      </QueryProvider>
+    </NextIntlClientProvider>
   )
 }
