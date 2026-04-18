@@ -1,113 +1,201 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
-import { useTheme } from 'next-themes'
-import CalHeatmap from 'cal-heatmap'
-import Tooltip from 'cal-heatmap/plugins/Tooltip'
-import CalendarLabel from 'cal-heatmap/plugins/CalendarLabel'
-import 'cal-heatmap/cal-heatmap.css'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useParams } from 'next/navigation'
 
 interface ActivityHeatmapProps {
   activityByDay: Record<string, number>
-  weekdays: string[]
+  weekdays: string[] // [Mon, Tue, Wed, Thu, Fri, Sat, Sun]
 }
 
+interface Tooltip {
+  text: string
+  x: number
+  y: number
+}
+
+function toLocalKey(d: Date) {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
+function getLevel(count: number) {
+  if (count === 0) return 0
+  if (count < 5) return 1
+  if (count < 15) return 2
+  if (count < 30) return 3
+  return 4
+}
+
+const LEVEL_CLASS: Record<number, string> = {
+  0: 'bg-muted',
+  1: 'bg-green-200 dark:bg-green-900',
+  2: 'bg-green-400 dark:bg-green-700',
+  3: 'bg-green-600 dark:bg-green-500',
+  4: 'bg-green-800 dark:bg-green-300',
+}
+
+// Show label only on even rows (Mon=0, Wed=2, Fri=4, Sun=6)
+const SHOW_LABEL = [true, false, true, false, true, false, true]
+
 export function ActivityHeatmap({ activityByDay, weekdays }: ActivityHeatmapProps) {
-  const { resolvedTheme } = useTheme()
+  const { locale } = useParams<{ locale: string }>()
   const scrollRef = useRef<HTMLDivElement>(null)
-  const containerRef = useRef<HTMLDivElement>(null)
-  const calRef = useRef<CalHeatmap | null>(null)
+  const [tooltip, setTooltip] = useState<Tooltip | null>(null)
 
-  useEffect(() => {
-    if (!containerRef.current) return
+  const todayKey = toLocalKey(new Date())
 
-    calRef.current?.destroy()
+  const { weeks, monthLabels } = useMemo(() => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
 
-    const isDark = resolvedTheme === 'dark'
+    // Monday of current week
+    const dow = today.getDay() // 0=Sun
+    const daysSinceMon = (dow + 6) % 7
+    const currentMonday = new Date(today)
+    currentMonday.setDate(today.getDate() - daysSinceMon)
 
-    const data = Object.entries(activityByDay).map(([date, value]) => ({
-      date: new Date(date).getTime(),
-      value,
-    }))
+    // Start 52 weeks before current Monday
+    const start = new Date(currentMonday)
+    start.setDate(currentMonday.getDate() - 52 * 7)
 
-    const end = new Date()
-    end.setHours(0, 0, 0, 0)
-    const start = new Date(end)
-    start.setFullYear(end.getFullYear() - 1)
-    start.setDate(start.getDate() + 1)
+    const fmt = new Intl.DateTimeFormat(locale, { month: 'short' })
 
-    const cal = new CalHeatmap()
-    calRef.current = cal
+    const weeks: ({ date: string; count: number } | null)[][] = []
+    const monthLabels: { weekIndex: number; label: string }[] = []
+    const cursor = new Date(start)
+    let prevMonth = -1
 
-    cal.paint(
-      {
-        itemSelector: containerRef.current,
-        theme: isDark ? 'dark' : 'light',
-        date: {
-          start,
-          locale: { weekStart: 1 },
-        },
-        range: 13,
-        domain: { type: 'month', gutter: 4 },
-        subDomain: { type: 'day', width: 12, height: 12, gutter: 2 },
-        data: {
-          source: data,
-          x: 'date',
-          y: 'value',
-          defaultValue: 0,
-        },
-        scale: {
-          color: {
-            range: isDark
-              ? ['#1f2937', '#14532d', '#15803d', '#22c55e', '#86efac']
-              : ['#f1f5f9', '#bbf7d0', '#4ade80', '#16a34a', '#14532d'],
-            interpolate: 'rgb',
-            type: 'threshold',
-            domain: [1, 5, 15, 30],
-          },
-        },
-      },
-      [
-        [
-          Tooltip,
-          {
-            enabled: true,
-            text: (_ts: number, value: number | null, d: { format: (f: string) => string }) => {
-              const date = d.format('YYYY-MM-DD')
-              if (!value) return `0 слів — ${date}`
-              const word = value === 1 ? 'слово' : value < 5 ? 'слова' : 'слів'
-              return `${value} ${word} — ${date}`
-            },
-          },
-        ],
-        [
-          CalendarLabel,
-          {
-            width: 30,
-            textAlign: 'start',
-            text: () => weekdays,
-            padding: [0, 4, 0, 0],
-          },
-        ],
-      ],
-    )
+    while (cursor <= today) {
+      const week: ({ date: string; count: number } | null)[] = []
 
-    // Scroll to the right so the most recent data is visible
-    requestAnimationFrame(() => {
-      if (scrollRef.current) {
-        scrollRef.current.scrollLeft = scrollRef.current.scrollWidth
+      for (let d = 0; d < 7; d++) {
+        if (cursor > today) {
+          week.push(null)
+        } else {
+          const key = toLocalKey(cursor)
+          week.push({ date: key, count: activityByDay[key] ?? 0 })
+        }
+        cursor.setDate(cursor.getDate() + 1)
       }
-    })
 
-    return () => {
-      cal.destroy()
-      calRef.current = null
+      // Month label: use the Monday of this week (first cell)
+      const firstDay = week.find(Boolean)
+      if (firstDay) {
+        const month = new Date(firstDay.date).getMonth()
+        if (month !== prevMonth) {
+          monthLabels.push({
+            weekIndex: weeks.length,
+            label: fmt.format(new Date(firstDay.date)),
+          })
+          prevMonth = month
+        }
+      }
+
+      weeks.push(week)
     }
-  }, [resolvedTheme, activityByDay, weekdays])
+
+    return { weeks, monthLabels }
+  }, [activityByDay, locale])
+
+  // Scroll to end on mount and when weeks change
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollLeft = scrollRef.current.scrollWidth
+    }
+  }, [weeks])
+
+  // Build a map of weekIndex → month label, skip if next label is too close
+  const monthLabelMap = useMemo(() => {
+    const map = new Map<number, string>()
+    for (let i = 0; i < monthLabels.length; i++) {
+      const curr = monthLabels[i]
+      const next = monthLabels[i + 1]
+      const span = next ? next.weekIndex - curr.weekIndex : weeks.length - curr.weekIndex
+      if (span >= 2) map.set(curr.weekIndex, curr.label)
+    }
+    return map
+  }, [monthLabels, weeks.length])
+
+  const CELL = 12
+  const GAP = 2
+  const ROW = CELL + GAP
 
   return (
-    <div ref={scrollRef} className="overflow-x-auto">
-      <div ref={containerRef} className="pl-8" />
+    <div className="flex gap-1.5 select-none">
+      {/* Sticky weekday labels */}
+      <div className="flex flex-col shrink-0" style={{ paddingTop: 20, gap: GAP }}>
+        {weekdays.map((label, i) => (
+          <div
+            key={i}
+            className="text-muted-foreground text-right"
+            style={{ fontSize: 10, height: CELL, lineHeight: `${CELL}px`, minWidth: 20 }}
+          >
+            {SHOW_LABEL[i] ? label : ''}
+          </div>
+        ))}
+      </div>
+
+      {/* Scrollable heatmap */}
+      <div ref={scrollRef} className="overflow-x-auto">
+        <div className="flex gap-0.5 min-w-max">
+          {weeks.map((week, wi) => (
+            <div key={wi} className="flex flex-col" style={{ gap: GAP }}>
+              {/* Month label row */}
+              <div style={{ height: 16, fontSize: 10, lineHeight: '16px' }} className="text-muted-foreground whitespace-nowrap">
+                {monthLabelMap.get(wi) ?? ''}
+              </div>
+
+              {/* Day cells */}
+              {week.map((day, di) =>
+                day === null ? (
+                  <div key={di} style={{ width: CELL, height: CELL }} />
+                ) : (
+                  <div
+                    key={di}
+                    style={{ width: CELL, height: CELL }}
+                    className={[
+                      'rounded-sm cursor-pointer transition-opacity hover:opacity-80',
+                      LEVEL_CLASS[getLevel(day.count)],
+                      day.date === todayKey ? 'ring-1 ring-primary ring-offset-1 ring-offset-card' : '',
+                    ].join(' ')}
+                    onMouseEnter={(e) => {
+                      const count = day.count
+                      const word =
+                        count === 0
+                          ? '0 слів'
+                          : count === 1
+                          ? '1 слово'
+                          : count < 5
+                          ? `${count} слова`
+                          : `${count} слів`
+                      setTooltip({
+                        text: `${word} — ${day.date}`,
+                        x: e.clientX,
+                        y: e.clientY,
+                      })
+                    }}
+                    onMouseMove={(e) => setTooltip((t) => t ? { ...t, x: e.clientX, y: e.clientY } : null)}
+                    onMouseLeave={() => setTooltip(null)}
+                  />
+                )
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Tooltip */}
+      {tooltip && (
+        <div
+          className="fixed z-50 pointer-events-none bg-popover text-popover-foreground border border-border rounded-md shadow-md text-xs px-2 py-1 whitespace-nowrap"
+          style={{ left: tooltip.x + 10, top: tooltip.y - 32 }}
+        >
+          {tooltip.text}
+        </div>
+      )}
     </div>
   )
 }

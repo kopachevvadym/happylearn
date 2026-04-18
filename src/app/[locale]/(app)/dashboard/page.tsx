@@ -127,13 +127,13 @@ export default async function DashboardPage() {
         <ActivityHeatmap
           activityByDay={activityByDay}
           weekdays={[
-            tp('weekday_sun'),
             tp('weekday_mon'),
             tp('weekday_tue'),
             tp('weekday_wed'),
             tp('weekday_thu'),
             tp('weekday_fri'),
             tp('weekday_sat'),
+            tp('weekday_sun'),
           ]}
         />
       </div>
