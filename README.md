@@ -1,5 +1,15 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Screenshots
+
+### Dashboard
+
+![Dashboard with streak, daily goal, activity heatmap, and collections progress](docs/screenshots/dashboard.png)
+
+### My Words
+
+![My Words page with searchable word list and translations](docs/screenshots/words.png)
+
 ## Getting Started
 
 First, run the development server:
