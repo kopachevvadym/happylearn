@@ -219,6 +219,15 @@
     "debug_incorrect": "Неправильно",
     "debug_reset": "скидання"
   },
+  "timeline": {
+    "title": "Стрічка слів",
+    "subtitle": "Слова, згруповані за днем додавання",
+    "today": "Сьогодні",
+    "yesterday": "Вчора",
+    "empty": "Ще немає доданих слів",
+    "loading": "Завантаження…",
+    "start": "Початок"
+  },
   "progress": {
     "title": "Прогрес",
     "streak_current": "Поточна серія",

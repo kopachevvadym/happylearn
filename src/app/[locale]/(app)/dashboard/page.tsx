@@ -1,8 +1,11 @@
 import Link from 'next/link'
+import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/server'
 import { getTranslations } from 'next-intl/server'
 import { BookOpen, Flame, GraduationCap, Library, Plus, Trophy } from 'lucide-react'
 import { ActivityHeatmap } from '@/components/shared/activity-heatmap'
+import { WordsTimelineBoard } from '@/components/words/words-timeline-board'
+import { wordsKeys, TIMELINE_PAGE_SIZE } from '@/lib/queries/keys'
 
 export default async function DashboardPage() {
   const t = await getTranslations('dashboard')
@@ -63,6 +66,39 @@ export default async function DashboardPage() {
   const learnedCount = totalLearnedRes.count ?? 0
   const currentStreak = streak?.current_streak ?? 0
 
+  // Prefetch the word-timeline board (first page) + learned progress so the
+  // dashboard widget hydrates without a client-side loading flash.
+  const queryClient = new QueryClient()
+  await Promise.all([
+    queryClient.prefetchInfiniteQuery({
+      queryKey: wordsKeys.timeline(user.id),
+      queryFn: async () => {
+        const { data } = await supabase
+          .from('words')
+          .select('*')
+          .eq('user_id', user.id)
+          // Ordering must match the client hook (keyset paging on created_at, id).
+          .order('created_at', { ascending: false })
+          .order('id', { ascending: false })
+          .limit(TIMELINE_PAGE_SIZE)
+        return data ?? []
+      },
+      initialPageParam: null,
+      getNextPageParam: () => undefined,
+      pages: 1,
+    }),
+    queryClient.prefetchQuery({
+      queryKey: wordsKeys.progress(user.id),
+      queryFn: async () => {
+        const { data } = await supabase
+          .from('word_progress')
+          .select('word_id, is_learned')
+          .eq('user_id', user.id)
+        return data ?? []
+      },
+    }),
+  ])
+
   // Build activity data for heatmap — convert UTC timestamps to local date keys
   const activityByDay: Record<string, number> = {}
   sessionsRes.data?.forEach((s) => {
@@ -120,6 +156,11 @@ export default async function DashboardPage() {
           {t('add_word')}
         </Link>
       </div>
+
+      {/* Word timeline — kanban of words grouped by the day they were added */}
+      <HydrationBoundary state={dehydrate(queryClient)}>
+        <WordsTimelineBoard userId={user.id} />
+      </HydrationBoundary>
 
       {/* Activity heatmap */}
       <div className="bg-card border border-border rounded-xl p-4">

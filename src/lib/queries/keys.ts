@@ -1,9 +1,14 @@
 // Query key factories — no 'use client', safe to import in both server and client components
 
+// Words per page for the timeline infinite query. Shared by the client hook and
+// the dashboard's server-side prefetch so they stay in sync.
+export const TIMELINE_PAGE_SIZE = 60
+
 export const wordsKeys = {
   all: (userId: string) => ['words', userId] as const,
   list: (userId: string) => ['words', userId, 'list'] as const,
   progress: (userId: string) => ['words', userId, 'progress'] as const,
+  timeline: (userId: string) => ['words', userId, 'timeline'] as const,
 }
 
 export const collectionsKeys = {

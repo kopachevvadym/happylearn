@@ -219,6 +219,15 @@
     "debug_incorrect": "Incorrect",
     "debug_reset": "reset"
   },
+  "timeline": {
+    "title": "Word timeline",
+    "subtitle": "Words grouped by the day you added them",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "empty": "No words added yet",
+    "loading": "Loading…",
+    "start": "Start"
+  },
   "progress": {
     "title": "Progress",
     "streak_current": "Current streak",
