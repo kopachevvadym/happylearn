@@ -98,7 +98,11 @@ export function WriteCard({ word, onAnswer, disabled }: WriteCardProps) {
               >
                 {t('flip_know')} ✓
               </button>
-            ) : isClose ? (
+            ) : (
+              // Non-exact: let the learner self-grade. The Levenshtein check
+              // only tints the answer box (yellow when close); the "Almost"
+              // option is always offered because a valid synonym or shorter
+              // form can be far in edit-distance yet essentially correct.
               <>
                 <button
                   type="button"
@@ -115,14 +119,6 @@ export function WriteCard({ word, onAnswer, disabled }: WriteCardProps) {
                   {t('write_almost')} ✓
                 </button>
               </>
-            ) : (
-              <button
-                type="button"
-                onClick={() => submit(1)}
-                className="col-span-2 h-11 border-2 border-destructive/30 text-destructive rounded-xl font-medium hover:bg-destructive/10 transition-colors"
-              >
-                {t('flip_dont_know')}
-              </button>
             )}
           </div>
         </div>
