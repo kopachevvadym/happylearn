@@ -4,6 +4,7 @@ import { getMessages } from 'next-intl/server'
 import { notFound } from 'next/navigation'
 import { routing } from '@/i18n/routing'
 import { QueryProvider } from '@/providers/query-provider'
+import { TimezoneCookie } from '@/components/shared/timezone-cookie'
 
 export const metadata: Metadata = {
   title: 'happylearn.club — Learn words with joy',
@@ -30,6 +31,7 @@ export default async function LocaleLayout({
   return (
     <NextIntlClientProvider messages={messages}>
       <QueryProvider>
+        <TimezoneCookie />
         {children}
       </QueryProvider>
     </NextIntlClientProvider>

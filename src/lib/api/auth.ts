@@ -1,3 +1,4 @@
+import { createHash } from 'crypto'
 import { type NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 
@@ -18,10 +19,12 @@ export async function authenticateApiKey(request: NextRequest) {
   const key = authHeader.slice(7)
   const supabase = createAdminClient()
 
+  // Keys are stored as SHA-256 hashes — a DB leak doesn't expose usable keys
+  const keyHash = createHash('sha256').update(key).digest('hex')
   const { data: apiKey } = await supabase
     .from('api_keys')
     .select('user_id, id')
-    .eq('key', key)
+    .eq('key_hash', keyHash)
     .single()
 
   if (!apiKey) {
@@ -32,8 +35,12 @@ export async function authenticateApiKey(request: NextRequest) {
     }
   }
 
-  // Update last_used_at asynchronously (fire and forget)
-  supabase.from('api_keys').update({ last_used_at: new Date().toISOString() }).eq('id', apiKey.id)
+  // A Supabase query builder only executes when awaited — a bare call is a
+  // no-op, so last_used_at was never updated.
+  await supabase
+    .from('api_keys')
+    .update({ last_used_at: new Date().toISOString() })
+    .eq('id', apiKey.id)
 
   return { supabase, userId: apiKey.user_id, error: null }
 }

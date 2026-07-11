@@ -2,7 +2,8 @@
 
 import { useTranslations } from 'next-intl'
 import { useTheme } from 'next-themes'
-import { useTransition, useEffect, useState } from 'react'
+import { useTransition } from 'react'
+import { useMounted } from '@/hooks/use-mounted'
 import { User, Settings, Sun, Moon, LogOut, ChevronDown } from 'lucide-react'
 import {
   DropdownMenu,
@@ -12,7 +13,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { logout } from '@/app/actions/auth'
-import { useRouter } from 'next/navigation'
+import { useRouter } from '@/i18n/navigation'
 
 interface UserMenuProps {
   user: { username: string; avatar_url: string | null }
@@ -21,11 +22,9 @@ interface UserMenuProps {
 export function UserMenu({ user }: UserMenuProps) {
   const t = useTranslations('UserMenu')
   const { resolvedTheme, setTheme } = useTheme()
-  const [mounted, setMounted] = useState(false)
+  const mounted = useMounted()
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
-
-  useEffect(() => setMounted(true), [])
 
   const isDark = mounted && resolvedTheme === 'dark'
 

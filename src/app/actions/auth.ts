@@ -1,6 +1,7 @@
 'use server'
 
 import { redirect } from 'next/navigation'
+import { getLocale, getTranslations } from 'next-intl/server'
 import { createClient } from '@/lib/supabase/server'
 import { z } from 'zod'
 
@@ -23,7 +24,8 @@ export async function loginWithPassword(formData: FormData) {
 
   const parsed = loginSchema.safeParse(raw)
   if (!parsed.success) {
-    return { error: 'Невірний email або пароль' }
+    const t = await getTranslations('errors')
+    return { error: t('invalid_credentials') }
   }
 
   const supabase = await createClient()
@@ -33,7 +35,7 @@ export async function loginWithPassword(formData: FormData) {
     return { error: error.message }
   }
 
-  redirect('/dashboard')
+  redirect(`/${await getLocale()}/dashboard`)
 }
 
 export async function registerWithPassword(formData: FormData) {
@@ -45,20 +47,22 @@ export async function registerWithPassword(formData: FormData) {
 
   const parsed = registerSchema.safeParse(raw)
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? 'Невалідні дані' }
+    const t = await getTranslations('errors')
+    return { error: parsed.error.issues[0]?.message ?? t('invalid_data') }
   }
 
   const supabase = await createClient()
 
   // Check username uniqueness
   const { data: existing } = await supabase
-    .from('users')
+    .from('public_profiles')
     .select('id')
     .eq('username', parsed.data.username)
     .maybeSingle()
 
   if (existing) {
-    return { error: 'Цей нікнейм вже зайнятий' }
+    const t = await getTranslations('errors')
+    return { error: t('username_taken') }
   }
 
   const { error } = await supabase.auth.signUp({
@@ -73,7 +77,7 @@ export async function registerWithPassword(formData: FormData) {
     return { error: error.message }
   }
 
-  redirect('/onboarding')
+  redirect(`/${await getLocale()}/onboarding`)
 }
 
 export async function loginWithGoogle() {
@@ -98,7 +102,8 @@ export async function sendMagicLink(formData: FormData) {
   const email = formData.get('email') as string
 
   if (!email || !z.string().email().safeParse(email).success) {
-    return { error: 'Введіть коректний email' }
+    const t = await getTranslations('errors')
+    return { error: t('invalid_email') }
   }
 
   const supabase = await createClient()
@@ -119,5 +124,5 @@ export async function sendMagicLink(formData: FormData) {
 export async function logout() {
   const supabase = await createClient()
   await supabase.auth.signOut()
-  redirect('/auth')
+  redirect(`/${await getLocale()}/auth`)
 }

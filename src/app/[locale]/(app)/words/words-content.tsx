@@ -1,5 +1,6 @@
 'use client'
 
+import { useSearchParams } from 'next/navigation'
 import { useWords, useWordProgress, useOwnCollectionsSimple, useProfileLangs } from '@/lib/queries'
 import { WordsList } from '@/components/words/words-list'
 
@@ -9,6 +10,9 @@ interface WordsContentProps {
 }
 
 export function WordsContent({ userId, title }: WordsContentProps) {
+  // Dashboard's "Add word" quick action links to /words?add=1
+  const searchParams = useSearchParams()
+  const openAddForm = searchParams.get('add') === '1'
   const { data: words = [] } = useWords(userId)
   const { data: progress = [] } = useWordProgress(userId)
   const { data: collections = [] } = useOwnCollectionsSimple(userId)
@@ -37,6 +41,7 @@ export function WordsContent({ userId, title }: WordsContentProps) {
         defaultSourceLang={profile?.default_source_lang ?? 'en'}
         defaultTargetLang={profile?.default_target_lang ?? 'uk'}
         duplicatesCount={duplicatesCount}
+        initialShowAddForm={openAddForm}
       />
     </div>
   )

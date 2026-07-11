@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { getTranslations } from 'next-intl/server'
 import { StudySetup } from '@/components/study/study-setup'
+import { getUserTimezone, startOfDayInTz } from '@/lib/utils/timezone'
 
 export default async function StudyPage() {
   const t = await getTranslations('study')
@@ -8,8 +9,8 @@ export default async function StudyPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
 
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
+  const tz = await getUserTimezone()
+  const today = startOfDayInTz(new Date(), tz)
 
   const [collectionsResult, completedResult] = await Promise.all([
     supabase

@@ -9,6 +9,7 @@ const GOALS = [5, 10, 20] as const
 
 export function OnboardingWizard() {
   const t = useTranslations('onboarding')
+  const tCommon = useTranslations('common')
   const [step, setStep] = useState(1)
   const [sourceLang, setSourceLang] = useState<LanguageCode>('uk')
   const [targetLang, setTargetLang] = useState<LanguageCode>('en')
@@ -130,7 +131,7 @@ export function OnboardingWizard() {
               onClick={() => setStep(1)}
               className="flex-1 h-10 border border-input rounded-lg text-sm hover:bg-accent transition-colors"
             >
-              ← Назад
+              ← {tCommon('back')}
             </button>
             <button
               onClick={handleSubmit}

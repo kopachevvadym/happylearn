@@ -35,6 +35,23 @@ export async function proxy(request: NextRequest) {
     pathnameWithoutLocale.startsWith(route)
   )
 
+  // No Supabase auth cookies → nothing to refresh. Skip the auth round-trip
+  // entirely for anonymous traffic (public catalog, landing) instead of
+  // paying a network call to the Supabase Auth server on every request.
+  const hasAuthCookies = request.cookies
+    .getAll()
+    .some((c) => c.name.startsWith('sb-') && c.name.includes('-auth-token'))
+
+  if (!hasAuthCookies) {
+    if (isProtectedRoute) {
+      const locale = pathname.split('/')[1] ?? 'uk'
+      const redirectUrl = new URL(`/${locale}/auth`, request.url)
+      redirectUrl.searchParams.set('redirectTo', pathname)
+      return NextResponse.redirect(redirectUrl)
+    }
+    return response
+  }
+
   // Create Supabase client using the request/response
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

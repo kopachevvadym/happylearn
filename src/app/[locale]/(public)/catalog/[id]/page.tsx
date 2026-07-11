@@ -21,7 +21,7 @@ export default async function CatalogCollectionPage({
   // Fetch the public collection (must be public)
   const { data: collectionRaw } = await supabase
     .from('collections')
-    .select('*, users(username, avatar_url)')
+    .select('*, users:public_profiles(username, avatar_url)')
     .eq('id', id)
     .eq('is_public', true)
     .single()

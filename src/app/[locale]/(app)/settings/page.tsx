@@ -53,27 +53,27 @@ export default async function SettingsPage() {
             <TabsTrigger value="study">{t('tabs.study')}</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="profile">
+          <TabsContent forceMount className="data-[state=inactive]:hidden" value="profile">
             <ProfileTab profile={profile} />
           </TabsContent>
 
-          <TabsContent value="languages">
+          <TabsContent forceMount className="data-[state=inactive]:hidden" value="languages">
             <LanguagesTab profile={profile} />
           </TabsContent>
 
-          <TabsContent value="appearance">
+          <TabsContent forceMount className="data-[state=inactive]:hidden" value="appearance">
             <AppearanceTab />
           </TabsContent>
 
-          <TabsContent value="apiKeys">
+          <TabsContent forceMount className="data-[state=inactive]:hidden" value="apiKeys">
             <ApiKeysTab apiKeys={apiKeys ?? []} />
           </TabsContent>
 
-          <TabsContent value="importExport">
+          <TabsContent forceMount className="data-[state=inactive]:hidden" value="importExport">
             <ImportExportTab />
           </TabsContent>
 
-          <TabsContent value="study">
+          <TabsContent forceMount className="data-[state=inactive]:hidden" value="study">
             <StudyTab />
           </TabsContent>
         </Tabs>

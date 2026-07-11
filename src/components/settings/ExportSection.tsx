@@ -41,13 +41,16 @@ export function ExportSection({ onError }: Props) {
       const result = await exportData()
       if (!result || 'error' in result) return onError(result?.error ?? 'Export failed')
       const header = 'word,translations,examples,source_lang,target_lang'
+      // RFC 4180: quote every field and double inner quotes so words with
+      // commas/quotes/newlines survive a round-trip.
+      const csvField = (value: string) => `"${value.replace(/"/g, '""')}"`
       const rows = (result.data ?? []).map((w) =>
         [
-          `"${w.word}"`,
-          `"${(w.translations as string[]).join(',')}"`,
-          `"${(w.examples as string[]).join(' | ')}"`,
-          w.source_lang,
-          w.target_lang,
+          csvField(w.word),
+          csvField((w.translations as string[]).join(',')),
+          csvField((w.examples as string[]).join(' | ')),
+          csvField(w.source_lang),
+          csvField(w.target_lang),
         ].join(',')
       )
       triggerDownload(

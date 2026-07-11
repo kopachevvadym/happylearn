@@ -17,13 +17,13 @@ export function WriteCard({ word, onAnswer, disabled }: WriteCardProps) {
   const [input, setInput] = useState('')
   const [checked, setChecked] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
+  const autoSubmitted = useRef(false)
 
   const translations = (word.translations as string[]).map(normalizeAnswer)
 
-  const check = () => {
-    if (!input.trim()) return
-    setChecked(true)
-  }
+  const userAnswer = normalizeAnswer(input)
+  const isExact = input.trim() !== '' && translations.some((t) => t === userAnswer)
+  const isClose = !isExact && translations.some((t) => levenshteinDistance(userAnswer, t) <= 2)
 
   const submit = (quality: number) => {
     setInput('')
@@ -31,9 +31,23 @@ export function WriteCard({ word, onAnswer, disabled }: WriteCardProps) {
     onAnswer(quality)
   }
 
-  const userAnswer = normalizeAnswer(input)
-  const isExact = translations.some((t) => t === userAnswer)
-  const isClose = !isExact && translations.some((t) => levenshteinDistance(userAnswer, t) <= 2)
+  const check = () => {
+    if (!input.trim() || checked) return
+    setChecked(true)
+    // Exact matches need no self-grading — show the green feedback briefly,
+    // then advance automatically.
+    if (isExact && !autoSubmitted.current) {
+      autoSubmitted.current = true
+      setTimeout(() => submit(5), 700)
+    }
+  }
+
+  // "Don't know" — reveal the correct answer first; the learner grades
+  // themselves afterwards instead of being silently failed.
+  const giveUp = () => {
+    if (checked) return
+    setChecked(true)
+  }
 
   return (
     <div className="space-y-4">
@@ -56,11 +70,11 @@ export function WriteCard({ word, onAnswer, disabled }: WriteCardProps) {
           <div className="flex gap-3">
             <button
               type="button"
-              onClick={() => submit(1)}
+              onClick={giveUp}
               disabled={disabled}
               className="flex-1 h-11 border-2 border-border rounded-xl text-sm hover:bg-accent transition-colors"
             >
-              {t('write_skip')}
+              {t('flip_dont_know')}
             </button>
             <button
               type="button"
@@ -81,7 +95,7 @@ export function WriteCard({ word, onAnswer, disabled }: WriteCardProps) {
               ? 'border-yellow-500 bg-yellow-50 dark:bg-yellow-950/20'
               : 'border-destructive bg-destructive/10'
           }`}>
-            <p className="font-medium">{input}</p>
+            <p className="font-medium">{input.trim() || '—'}</p>
             {!isExact && (
               <p className="text-sm text-muted-foreground">
                 {t('write_correct_label')} <span className="font-semibold">{(word.translations as string[])[0]}</span>
@@ -91,13 +105,12 @@ export function WriteCard({ word, onAnswer, disabled }: WriteCardProps) {
 
           <div className="grid grid-cols-2 gap-3">
             {isExact ? (
-              <button
-                type="button"
-                onClick={() => submit(5)}
-                className="col-span-2 h-11 bg-green-500 text-white rounded-xl font-medium hover:bg-green-600 transition-colors"
+              <div
+                aria-hidden="true"
+                className="col-span-2 h-11 flex items-center justify-center bg-green-500 text-white rounded-xl font-medium"
               >
                 {t('flip_know')} ✓
-              </button>
+              </div>
             ) : (
               // Non-exact: let the learner self-grade. The Levenshtein check
               // only tints the answer box (yellow when close); the "Almost"

@@ -1,7 +1,6 @@
 'use client'
 
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { Link, usePathname } from '@/i18n/navigation'
 import { useTranslations } from 'next-intl'
 import {
   LayoutDashboard,
@@ -22,10 +21,8 @@ const navItems = [
 
 export function AppSidebar() {
   const t = useTranslations('nav')
-  const pathname = usePathname()
-
-  // Strip locale prefix for comparison
-  const currentPath = pathname.replace(/^\/(uk|en)/, '') || '/'
+  // next-intl's usePathname already returns the locale-less path
+  const currentPath = usePathname() || '/'
 
   return (
     <aside className="hidden md:flex w-56 flex-col border-r border-border bg-card h-full">

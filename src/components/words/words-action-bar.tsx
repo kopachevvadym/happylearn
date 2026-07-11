@@ -24,6 +24,7 @@ interface WordsActionBarProps {
   defaultTargetLang: string
   onClearSelection: () => void
   onActionSuccess: (message: string) => void
+  onActionError: (message: string) => void
 }
 
 export function WordsActionBar({
@@ -36,6 +37,7 @@ export function WordsActionBar({
   defaultTargetLang,
   onClearSelection,
   onActionSuccess,
+  onActionError,
 }: WordsActionBarProps) {
   const t = useTranslations('words')
   const [openPanel, setOpenPanel] = useState<OpenPanel>(null)
@@ -57,9 +59,15 @@ export function WordsActionBar({
     onClearSelection()
   }
 
+  // Server errors must surface — a success toast over a failed action makes
+  // the UI lie and the selection disappear as if the work was done.
   const handleMarkLearned = () => {
     startTransition(async () => {
-      await markWordsAsLearned(selectedIds)
+      const result = await markWordsAsLearned(selectedIds)
+      if (result?.error) {
+        onActionError(result.error)
+        return
+      }
       onActionSuccess(t('markedAsLearned', { count: selectedIds.length }))
       closeAndClear()
     })
@@ -67,7 +75,11 @@ export function WordsActionBar({
 
   const handleApplyLanguage = () => {
     startTransition(async () => {
-      await updateWordsLanguage(selectedIds, sourceLang, targetLang)
+      const result = await updateWordsLanguage(selectedIds, sourceLang, targetLang)
+      if (result?.error) {
+        onActionError(result.error)
+        return
+      }
       onActionSuccess(t('changeLanguage'))
       closeAndClear()
     })
@@ -75,7 +87,11 @@ export function WordsActionBar({
 
   const handleAddToCollection = (collectionId: string) => {
     startTransition(async () => {
-      await addExistingWordsToCollection(selectedIds, collectionId)
+      const result = await addExistingWordsToCollection(selectedIds, collectionId)
+      if (result?.error) {
+        onActionError(result.error)
+        return
+      }
       onActionSuccess(t('addToCollection'))
       closeAndClear()
     })
@@ -83,7 +99,11 @@ export function WordsActionBar({
 
   const handleDeleteConfirm = () => {
     startTransition(async () => {
-      await deleteWords(selectedIds)
+      const result = await deleteWords(selectedIds)
+      if (result?.error) {
+        onActionError(result.error)
+        return
+      }
       onActionSuccess(t('deleted', { count: selectedIds.length }))
       closeAndClear()
     })

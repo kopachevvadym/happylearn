@@ -2,8 +2,9 @@
 
 import { useState, useTransition } from 'react'
 import { useTranslations } from 'next-intl'
+import { Link, useRouter } from '@/i18n/navigation'
 import { Search, Globe, Users } from 'lucide-react'
-import { followCollection, unfollowCollection } from '@/app/actions/collections'
+import { followCollection, unfollowCollection, fetchPublicCollections } from '@/app/actions/collections'
 import { SUPPORTED_LANGUAGES } from '@/types'
 
 type CatalogCollection = {
@@ -28,13 +29,31 @@ interface CatalogClientProps {
 
 export function CatalogClient({ collections, followedIds: initialFollowed, isLoggedIn, currentUserId }: CatalogClientProps) {
   const t = useTranslations('catalog')
+  const tCol = useTranslations('collections')
+  const router = useRouter()
   const [search, setSearch] = useState('')
   const [langFilter, setLangFilter] = useState('')
   const [sortBy, setSortBy] = useState<'new' | 'popular'>('new')
   const [followed, setFollowed] = useState(initialFollowed)
   const [isPending, startTransition] = useTransition()
 
-  const filtered = collections
+  // The server renders the first page; further pages load on demand
+  const [items, setItems] = useState<CatalogCollection[]>(collections)
+  const [hasMore, setHasMore] = useState(collections.length >= 100)
+  const [isLoadingMore, startLoadMore] = useTransition()
+
+  const loadMore = () => {
+    startLoadMore(async () => {
+      const next = (await fetchPublicCollections(items.length)) as unknown as CatalogCollection[]
+      setItems((prev) => {
+        const known = new Set(prev.map((c) => c.id))
+        return [...prev, ...next.filter((c) => !known.has(c.id))]
+      })
+      setHasMore(next.length >= 100)
+    })
+  }
+
+  const filtered = items
     .filter((c) => {
       const matchSearch =
         !search ||
@@ -54,19 +73,22 @@ export function CatalogClient({ collections, followedIds: initialFollowed, isLog
 
   const handleFollowToggle = (id: string) => {
     if (!isLoggedIn) {
-      window.location.href = '/auth'
+      // Locale-aware client navigation instead of a full reload to /auth
+      router.push('/auth')
       return
     }
     const isFollowed = followed.has(id)
-    setFollowed((prev) => {
-      const next = new Set(prev)
-      if (isFollowed) next.delete(id)
-      else next.add(id)
-      return next
-    })
+    const apply = (followedNow: boolean) =>
+      setFollowed((prev) => {
+        const next = new Set(prev)
+        if (followedNow) next.add(id)
+        else next.delete(id)
+        return next
+      })
+    apply(!isFollowed) // optimistic
     startTransition(async () => {
-      if (isFollowed) await unfollowCollection(id)
-      else await followCollection(id)
+      const result = isFollowed ? await unfollowCollection(id) : await followCollection(id)
+      if (result?.error) apply(isFollowed) // roll back on failure
     })
   }
 
@@ -88,7 +110,7 @@ export function CatalogClient({ collections, followedIds: initialFollowed, isLog
           onChange={(e) => setLangFilter(e.target.value)}
           className="h-10 px-3 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-2 focus:ring-ring"
         >
-          <option value="">Всі мови</option>
+          <option value="">{t('all_languages')}</option>
           {Object.entries(SUPPORTED_LANGUAGES).map(([code, name]) => (
             <option key={code} value={code}>{name}</option>
           ))}
@@ -119,9 +141,9 @@ export function CatalogClient({ collections, followedIds: initialFollowed, isLog
           return (
             <div key={col.id} className="bg-card border border-border rounded-xl p-4 space-y-3">
               <div>
-                <a href={`/catalog/${col.id}`} className="font-semibold hover:underline">
+                <Link href={`/catalog/${col.id}`} className="font-semibold hover:underline">
                   {col.name}
-                </a>
+                </Link>
                 {col.description && (
                   <p className="text-sm text-muted-foreground mt-0.5 line-clamp-2">{col.description}</p>
                 )}
@@ -134,19 +156,19 @@ export function CatalogClient({ collections, followedIds: initialFollowed, isLog
               </div>
               <div className="flex items-center justify-between text-sm">
                 <div className="flex items-center gap-3 text-muted-foreground">
-                  <span>{wordCount} слів</span>
+                  <span>{tCol('words_count', { count: wordCount })}</span>
                   <span className="flex items-center gap-1">
                     <Users className="w-3.5 h-3.5" />
                     {followerCount}
                   </span>
                 </div>
                 {col.users?.username && (
-                  <a
+                  <Link
                     href={`/profile/${col.users.username}`}
                     className="text-xs hover:underline text-muted-foreground"
                   >
                     @{col.users.username}
-                  </a>
+                  </Link>
                 )}
               </div>
               {currentUserId !== col.user_id && (
@@ -159,7 +181,7 @@ export function CatalogClient({ collections, followedIds: initialFollowed, isLog
                       : 'bg-primary text-primary-foreground hover:bg-primary/90'
                   } disabled:opacity-60`}
                 >
-                  {isFollowed ? 'Відписатись' : isLoggedIn ? 'Підписатись' : t('login_to_follow')}
+                  {isFollowed ? tCol('unfollow_btn') : isLoggedIn ? tCol('follow_btn') : t('login_to_follow')}
                 </button>
               )}
             </div>
@@ -169,7 +191,20 @@ export function CatalogClient({ collections, followedIds: initialFollowed, isLog
 
       {filtered.length === 0 && (
         <div className="text-center py-16 text-muted-foreground">
-          Нічого не знайдено
+          {t('no_results')}
+        </div>
+      )}
+
+      {hasMore && (
+        <div className="flex justify-center">
+          <button
+            type="button"
+            onClick={loadMore}
+            disabled={isLoadingMore}
+            className="h-10 px-6 rounded-lg border border-border text-sm font-medium hover:bg-accent transition-colors disabled:opacity-60"
+          >
+            {isLoadingMore ? '…' : t('load_more')}
+          </button>
         </div>
       )}
     </div>

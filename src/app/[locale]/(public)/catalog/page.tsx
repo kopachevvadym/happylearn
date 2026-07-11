@@ -13,7 +13,7 @@ export default async function CatalogPage() {
     .from('collections')
     .select(`
       id, name, description, source_lang, target_lang, created_at, user_id,
-      users(username, avatar_url),
+      users:public_profiles(username, avatar_url),
       collection_words(count),
       collection_follows(count)
     `)

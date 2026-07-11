@@ -28,7 +28,7 @@ export async function generateMetadata({
   const { username } = await params
   const supabase = await createClient()
   const { data: profile } = await supabase
-    .from('users')
+    .from('public_profiles')
     .select('username, bio')
     .eq('username', username)
     .single()
@@ -53,7 +53,7 @@ export default async function ProfilePage({
   const supabase = await createClient()
 
   const { data: profile } = await supabase
-    .from('users')
+    .from('public_profiles')
     .select('id, username, avatar_url, display_role, bio, default_source_lang, default_target_lang')
     .eq('username', username)
     .single()
@@ -77,11 +77,9 @@ export default async function ProfilePage({
       .eq('user_id', profile.id)
       .eq('is_public', true)
       .order('created_at', { ascending: false }),
-    supabase
-      .from('word_progress')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', profile.id)
-      .eq('is_learned', true),
+    // word_progress is private per-user; the aggregate comes from a
+    // definer RPC so visitors see the real learned count instead of 0.
+    supabase.rpc('get_public_profile_stats', { profile_id: profile.id }),
   ])
 
   const streak = streakRes.data
@@ -97,7 +95,7 @@ export default async function ProfilePage({
     target_lang: string
     collection_words: { count: number }[]
   }>
-  const wordsCount = learnedRes.count ?? 0
+  const wordsCount = learnedRes.data?.[0]?.learned_count ?? 0
 
   const sourceLang = SUPPORTED_LANGUAGES[profile.default_source_lang as keyof typeof SUPPORTED_LANGUAGES] ?? profile.default_source_lang
   const targetLang = SUPPORTED_LANGUAGES[profile.default_target_lang as keyof typeof SUPPORTED_LANGUAGES] ?? profile.default_target_lang

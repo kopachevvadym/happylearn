@@ -94,8 +94,8 @@ export function PublicWordsTable({
                 className="w-4 h-4 rounded accent-primary cursor-pointer flex-shrink-0"
               />
             )}
-            <span className="flex-1">Слово</span>
-            <span className="flex-1">Переклад</span>
+            <span className="flex-1">{t('word')}</span>
+            <span className="flex-1">{t('translation')}</span>
           </div>
 
           {/* Word rows */}

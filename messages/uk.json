@@ -22,7 +22,9 @@
     "or": "або",
     "and": "та",
     "copied": "Скопійовано!",
-    "clear": "Очистити"
+    "clear": "Очистити",
+    "theme_light": "Світла тема",
+    "theme_dark": "Темна тема"
   },
   "nav": {
     "dashboard": "Головна",
@@ -148,7 +150,8 @@
     "mergeConfirmTitle": "Об'єднати {count} {count, plural, one {дублікат} few {дублікати} many {дублікатів} other {дублікатів}}?",
     "mergeConfirmDescription": "Слова з однаковим написанням будуть об'єднані. Переклади і приклади збережуться. Найкращий прогрес буде збережено.",
     "mergeSuccess": "Об'єднано {merged} {merged, plural, one {дублікат} few {дублікати} many {дублікатів} other {дублікатів}} у {groups} {groups, plural, one {групу} few {групи} many {груп} other {груп}}",
-    "merge": "Об'єднати"
+    "merge": "Об'єднати",
+    "remove_from_collection": "Прибрати зі збірки"
   },
   "collections": {
     "title": "Збірки",
@@ -168,7 +171,12 @@
     "delete_confirm": "Видалити збірку \"{name}\"?",
     "cant_delete_default": "Не можна видалити словник за замовчуванням",
     "empty_state": "Немає збірок. Створіть першу!",
-    "add_words": "Додати слова"
+    "add_words": "Додати слова",
+    "copy_suffix": "копія",
+    "my_dictionary": "Мій словник",
+    "my_collections": "Мої збірки",
+    "subscriptions": "Підписки",
+    "create_btn": "Створити"
   },
   "study": {
     "title": "Вчити зараз",
@@ -245,7 +253,8 @@
     "weekday_wed": "Ср",
     "weekday_thu": "Чт",
     "weekday_fri": "Пт",
-    "weekday_sat": "Сб"
+    "weekday_sat": "Сб",
+    "heatmap_words": "{count, plural, one {# слово} few {# слова} many {# слів} other {# слова}}"
   },
   "catalog": {
     "title": "Каталог збірок",
@@ -258,7 +267,10 @@
     "size_medium": "Середні (20–100)",
     "size_large": "Великі (100+)",
     "by_author": "від {username}",
-    "login_to_follow": "Увійдіть, щоб підписатись"
+    "login_to_follow": "Увійдіть, щоб підписатись",
+    "all_languages": "Всі мови",
+    "no_results": "Нічого не знайдено",
+    "load_more": "Показати ще"
   },
   "profile": {
     "streak": "{count} днів поспіль",
@@ -426,7 +438,9 @@
     "noWords": "Немає слів",
     "notFound": "Нічого не знайдено",
     "loginToSelect": "Увійдіть, щоб вибирати слова",
-    "searchPlaceholder": "Пошук слів..."
+    "searchPlaceholder": "Пошук слів...",
+    "word": "Слово",
+    "translation": "Переклад"
   },
   "errors": {
     "required": "Обов'язкове поле",
@@ -435,6 +449,18 @@
     "username_taken": "Цей нікнейм вже зайнятий",
     "generic": "Щось пішло не так. Спробуйте ще раз.",
     "not_found": "Не знайдено",
-    "unauthorized": "Необхідна авторизація"
+    "unauthorized": "Необхідна авторизація",
+    "try_again": "Спробувати ще раз",
+    "word_required": "Слово обов'язкове",
+    "min_one_translation": "Потрібен щонайменше один переклад",
+    "invalid_data": "Невалідні дані",
+    "no_valid_rows": "Немає валідних рядків",
+    "collection_not_found": "Збірку не знайдено",
+    "collections_not_found": "Збірки не знайдено",
+    "name_required": "Назва обов'язкова",
+    "cant_delete_default": "Не можна видалити словник за замовчуванням",
+    "cant_follow_own": "Не можна підписатися на власну збірку",
+    "too_long": "Занадто довге значення",
+    "invalid_credentials": "Невірний email або пароль"
   }
 }

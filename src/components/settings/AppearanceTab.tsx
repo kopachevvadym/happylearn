@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
 import { useTranslations } from 'next-intl'
+import { useMounted } from '@/hooks/use-mounted'
 import { useTheme } from 'next-themes'
 import { useRouter, usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
@@ -9,11 +9,9 @@ import { cn } from '@/lib/utils'
 export function AppearanceTab() {
   const t = useTranslations('Settings')
   const { theme, setTheme } = useTheme()
-  const [mounted, setMounted] = useState(false)
+  const mounted = useMounted()
   const router = useRouter()
   const pathname = usePathname()
-
-  useEffect(() => setMounted(true), [])
 
   const handleLocaleChange = (locale: string) => {
     const segments = pathname.split('/')

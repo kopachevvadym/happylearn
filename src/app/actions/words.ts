@@ -1,36 +1,42 @@
 'use server'
 
 import { revalidatePath } from 'next/cache'
+import { getTranslations } from 'next-intl/server'
 import { createClient } from '@/lib/supabase/server'
 import { checkAndAwardBadges } from './badges'
 import { z } from 'zod'
 
-const wordSchema = z.object({
-  word: z.string().min(1, 'Слово обов\'язкове'),
-  translations: z.array(z.string().min(1)).min(1, 'Мінімум один переклад'),
-  examples: z.array(z.string()).optional().default([]),
-  source_lang: z.string().min(2),
-  target_lang: z.string().min(2),
-})
+// Built per-request so validation messages follow the caller's locale
+async function getWordSchema() {
+  const t = await getTranslations('errors')
+  return z.object({
+    word: z.string().min(1, t('word_required')).max(200, t('too_long')),
+    translations: z.array(z.string().min(1)).min(1, t('min_one_translation')),
+    examples: z.array(z.string()).optional().default([]),
+    source_lang: z.string().min(2),
+    target_lang: z.string().min(2),
+  })
+}
 
 export async function addWord(formData: FormData) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Unauthorized' }
 
+  const t = await getTranslations('errors')
   const translations = formData.getAll('translations') as string[]
   const examples = formData.getAll('examples') as string[]
 
-  const parsed = wordSchema.safeParse({
-    word: formData.get('word'),
-    translations: translations.filter(Boolean),
+  const parsed = (await getWordSchema()).safeParse({
+    word: (formData.get('word') as string | null)?.trim(),
+    translations: translations.map((tr) => tr.trim()).filter(Boolean),
     examples: examples.filter(Boolean),
     source_lang: formData.get('source_lang'),
     target_lang: formData.get('target_lang'),
   })
 
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? 'Невалідні дані' }
+    return { error: parsed.error.issues[0]?.message ?? t('invalid_data') }
   }
 
   const { data: word, error } = await supabase
@@ -50,16 +56,20 @@ export async function addWord(formData: FormData) {
     .single()
 
   if (defaultCollection) {
-    await supabase
+    // The word row is already saved — a failed link must not throw an
+    // unhandled exception (a retry would create a duplicate word).
+    const { error: linkError } = await supabase
       .from('collection_words')
       .insert({ collection_id: defaultCollection.id, word_id: word.id })
-      .throwOnError()
+    if (linkError) {
+      console.error('Failed to link word to default collection', linkError)
+    }
   }
 
   await checkAndAwardBadges(user.id, 'word_added')
 
-  revalidatePath('/words')
-  revalidatePath('/dashboard')
+  revalidatePath('/[locale]/words', 'page')
+  revalidatePath('/[locale]/dashboard', 'page')
   return { success: true, data: word }
 }
 
@@ -68,19 +78,20 @@ export async function updateWord(wordId: string, formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Unauthorized' }
 
+  const t = await getTranslations('errors')
   const translations = formData.getAll('translations') as string[]
   const examples = formData.getAll('examples') as string[]
 
-  const parsed = wordSchema.safeParse({
-    word: formData.get('word'),
-    translations: translations.filter(Boolean),
+  const parsed = (await getWordSchema()).safeParse({
+    word: (formData.get('word') as string | null)?.trim(),
+    translations: translations.map((tr) => tr.trim()).filter(Boolean),
     examples: examples.filter(Boolean),
     source_lang: formData.get('source_lang'),
     target_lang: formData.get('target_lang'),
   })
 
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? 'Невалідні дані' }
+    return { error: parsed.error.issues[0]?.message ?? t('invalid_data') }
   }
 
   const { error } = await supabase
@@ -91,7 +102,7 @@ export async function updateWord(wordId: string, formData: FormData) {
 
   if (error) return { error: error.message }
 
-  revalidatePath('/words')
+  revalidatePath('/[locale]/words', 'page')
   return { success: true }
 }
 
@@ -108,8 +119,8 @@ export async function deleteWord(wordId: string) {
 
   if (error) return { error: error.message }
 
-  revalidatePath('/words')
-  revalidatePath('/dashboard')
+  revalidatePath('/[locale]/words', 'page')
+  revalidatePath('/[locale]/dashboard', 'page')
   return { success: true }
 }
 
@@ -127,8 +138,7 @@ export async function toggleWordLearned(wordId: string, isLearned: boolean) {
 
   if (error) return { error: error.message }
 
-  revalidatePath('/words')
-  revalidatePath('/progress')
+  revalidatePath('/[locale]/words', 'page')
   return { success: true }
 }
 
@@ -142,7 +152,10 @@ export async function addWordsBulk(
   if (!user) return { error: 'Unauthorized' }
 
   const valid = entries.filter((e) => e.word.trim() && e.translation.trim())
-  if (!valid.length) return { error: 'Немає валідних рядків' }
+  if (!valid.length) {
+    const t = await getTranslations('errors')
+    return { error: t('no_valid_rows') }
+  }
 
   const { data: insertedWords, error } = await supabase
     .from('words')
@@ -175,8 +188,8 @@ export async function addWordsBulk(
 
   await checkAndAwardBadges(user.id, 'word_added')
 
-  revalidatePath('/words')
-  revalidatePath('/dashboard')
+  revalidatePath('/[locale]/words', 'page')
+  revalidatePath('/[locale]/dashboard', 'page')
   return { success: true, count: insertedWords?.length ?? 0 }
 }
 
@@ -277,9 +290,9 @@ export async function addWordsToCollection(
 
   await checkAndAwardBadges(user.id, 'word_added')
 
-  revalidatePath('/collections')
-  revalidatePath('/words')
-  revalidatePath('/dashboard')
+  revalidatePath('/[locale]/collections', 'page')
+  revalidatePath('/[locale]/words', 'page')
+  revalidatePath('/[locale]/dashboard', 'page')
 
   return { added: insertedWords.length, skipped, collectionName: col.name }
 }
@@ -296,7 +309,7 @@ export async function updateWordsLanguage(wordIds: string[], sourceLang: string,
     .eq('user_id', user.id)
 
   if (error) return { error: error.message }
-  revalidatePath('/words')
+  revalidatePath('/[locale]/words', 'page')
   return { success: true }
 }
 
@@ -311,8 +324,7 @@ export async function markWordsAsLearned(wordIds: string[]) {
     .upsert(rows, { onConflict: 'user_id,word_id' })
 
   if (error) return { error: error.message }
-  revalidatePath('/words')
-  revalidatePath('/progress')
+  revalidatePath('/[locale]/words', 'page')
   return { success: true }
 }
 
@@ -328,8 +340,8 @@ export async function deleteWords(wordIds: string[]) {
     .eq('user_id', user.id)
 
   if (error) return { error: error.message }
-  revalidatePath('/words')
-  revalidatePath('/dashboard')
+  revalidatePath('/[locale]/words', 'page')
+  revalidatePath('/[locale]/dashboard', 'page')
   return { success: true }
 }
 
@@ -346,14 +358,24 @@ export async function addExistingWordsToCollection(wordIds: string[], collection
     .single()
   if (!col) return { error: 'Not found' }
 
-  const rows = wordIds.map((id) => ({ collection_id: collectionId, word_id: id }))
+  // Only the caller's own words may be linked — foreign ids would otherwise
+  // expose another user's words through a public collection.
+  const { data: ownWords } = await supabase
+    .from('words')
+    .select('id')
+    .eq('user_id', user.id)
+    .in('id', wordIds)
+
+  if (!ownWords?.length) return { error: 'Not found' }
+
+  const rows = ownWords.map((w) => ({ collection_id: collectionId, word_id: w.id }))
   const { error } = await supabase
     .from('collection_words')
     .upsert(rows, { onConflict: 'collection_id,word_id', ignoreDuplicates: true })
 
   if (error) return { error: error.message }
-  revalidatePath('/words')
-  revalidatePath('/collections')
+  revalidatePath('/[locale]/words', 'page')
+  revalidatePath('/[locale]/collections', 'page')
   return { success: true }
 }
 
@@ -380,7 +402,32 @@ export async function mergeDuplicates() {
   const duplicateGroups = [...groups.values()].filter((g) => g.length > 1)
   if (duplicateGroups.length === 0) return { mergedCount: 0, groupsCount: 0 }
 
+  // Bulk-read progress and collection links for every affected word up front —
+  // the previous per-group/per-duplicate queries made large merges take minutes.
+  const affectedIds = duplicateGroups.flatMap((g) => g.map((w) => w.id))
+  const [{ data: allProgress }, { data: allLinks }] = await Promise.all([
+    supabase
+      .from('word_progress')
+      .select('*')
+      .in('word_id', affectedIds)
+      .eq('user_id', user.id),
+    supabase
+      .from('collection_words')
+      .select('collection_id, word_id')
+      .in('word_id', affectedIds),
+  ])
+
+  type ProgressRow = NonNullable<typeof allProgress>[number]
+  const progressByWord = new Map((allProgress ?? []).map((p) => [p.word_id, p]))
+  const linksByWord = new Map<string, string[]>()
+  for (const l of allLinks ?? []) {
+    const list = linksByWord.get(l.word_id) ?? []
+    list.push(l.collection_id)
+    linksByWord.set(l.word_id, list)
+  }
+
   let mergedCount = 0
+  const allDuplicateIds: string[] = []
 
   for (const group of duplicateGroups) {
     const sorted = [...group].sort(
@@ -391,18 +438,16 @@ export async function mergeDuplicates() {
     const allTranslations = [...new Set(group.flatMap((w) => w.translations as string[]))]
     const allExamples = [...new Set(group.flatMap((w) => w.examples as string[]))]
 
-    const { data: progressRecords } = await supabase
-      .from('word_progress')
-      .select('*')
-      .in('word_id', group.map((w) => w.id))
-      .eq('user_id', user.id)
-
-    type ProgressRow = NonNullable<typeof progressRecords>[number]
-    const bestProgress = progressRecords?.reduce<ProgressRow | null>((best, cur) => {
+    // The survivor keeps the most advanced study history: repetitions first
+    // (actual progress), then interval, then the latest review date — ease
+    // factor alone says nothing about how far the word has been learned.
+    const bestProgress = group.reduce<ProgressRow | null>((best, w) => {
+      const cur = progressByWord.get(w.id)
+      if (!cur) return best
       if (!best) return cur
-      if (cur.ease_factor > best.ease_factor) return cur
-      if (cur.ease_factor === best.ease_factor && cur.repetitions > best.repetitions) return cur
-      return best
+      if (cur.repetitions !== best.repetitions) return cur.repetitions > best.repetitions ? cur : best
+      if (cur.interval !== best.interval) return cur.interval > best.interval ? cur : best
+      return new Date(cur.next_review_at) > new Date(best.next_review_at) ? cur : best
     }, null)
 
     await supabase
@@ -427,33 +472,35 @@ export async function mergeDuplicates() {
         )
     }
 
-    for (const duplicate of duplicates) {
-      const { data: dupCollections } = await supabase
+    // Re-link the duplicates' collections to the surviving word
+    const relinkRows = duplicates.flatMap((d) =>
+      (linksByWord.get(d.id) ?? []).map((collection_id) => ({
+        collection_id,
+        word_id: primary.id,
+      }))
+    )
+    if (relinkRows.length) {
+      await supabase
         .from('collection_words')
-        .select('collection_id')
-        .eq('word_id', duplicate.id)
-
-      if (dupCollections?.length) {
-        await supabase
-          .from('collection_words')
-          .upsert(
-            dupCollections.map(({ collection_id }) => ({ collection_id, word_id: primary.id })),
-            { onConflict: 'collection_id,word_id', ignoreDuplicates: true }
-          )
-      }
+        .upsert(relinkRows, { onConflict: 'collection_id,word_id', ignoreDuplicates: true })
     }
 
-    await supabase
-      .from('words')
-      .delete()
-      .in('id', duplicates.map((w) => w.id))
-      .eq('user_id', user.id)
-
+    allDuplicateIds.push(...duplicates.map((w) => w.id))
     mergedCount += duplicates.length
   }
 
-  revalidatePath('/words')
-  revalidatePath('/dashboard')
+  // One delete for all duplicates instead of one per group
+  if (allDuplicateIds.length) {
+    const { error: deleteError } = await supabase
+      .from('words')
+      .delete()
+      .in('id', allDuplicateIds)
+      .eq('user_id', user.id)
+    if (deleteError) return { error: deleteError.message }
+  }
+
+  revalidatePath('/[locale]/words', 'page')
+  revalidatePath('/[locale]/dashboard', 'page')
   return { mergedCount, groupsCount: duplicateGroups.length }
 }
 
@@ -469,7 +516,10 @@ export async function addWordToCollections(wordId: string, collectionIds: string
     .eq('user_id', user.id)
     .in('id', collectionIds)
 
-  if (!collections?.length) return { error: 'Збірки не знайдено' }
+  if (!collections?.length) {
+    const t = await getTranslations('errors')
+    return { error: t('collections_not_found') }
+  }
 
   const rows = collections.map((c) => ({ collection_id: c.id, word_id: wordId }))
   const { error } = await supabase
@@ -478,7 +528,7 @@ export async function addWordToCollections(wordId: string, collectionIds: string
 
   if (error) return { error: error.message }
 
-  revalidatePath('/words')
-  revalidatePath('/collections')
+  revalidatePath('/[locale]/words', 'page')
+  revalidatePath('/[locale]/collections', 'page')
   return { success: true }
 }

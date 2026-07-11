@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { getUserTimezone, dayDiffInTz } from '@/lib/utils/timezone'
 import type { BadgeSlug } from '@/types'
 
 type BadgeEvent =
@@ -84,7 +85,9 @@ export async function updateStreak(userId: string) {
   const supabase = await createClient()
 
   const now = new Date()
-  const today = new Date(now.setHours(0, 0, 0, 0))
+  // Day boundaries in the user's timezone — a session at 01:00 Kyiv time
+  // must count as the local day, not the server's (UTC) previous day.
+  const tz = await getUserTimezone()
 
   const { data: streak } = await supabase
     .from('user_streaks')
@@ -107,10 +110,7 @@ export async function updateStreak(userId: string) {
     : null
 
   if (lastActivity) {
-    const lastDay = new Date(lastActivity.setHours(0, 0, 0, 0))
-    const diffDays = Math.round(
-      (today.getTime() - lastDay.getTime()) / (1000 * 60 * 60 * 24)
-    )
+    const diffDays = dayDiffInTz(now, lastActivity, tz)
 
     if (diffDays === 0) {
       // Already updated today

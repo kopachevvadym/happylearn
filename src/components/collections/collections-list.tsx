@@ -52,6 +52,7 @@ export function CollectionsList({
   defaultTargetLang,
 }: CollectionsListProps) {
   const t = useTranslations('collections')
+  const tCatalog = useTranslations('catalog')
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [editingCollection, setEditingCollection] = useState<OwnCollection | null>(null)
   const [isPending, startTransition] = useTransition()
@@ -83,7 +84,7 @@ export function CollectionsList({
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
-            Мої збірки
+            {t('my_collections')}
           </h2>
           <button
             onClick={() => setShowCreateForm(true)}
@@ -178,7 +179,7 @@ export function CollectionsList({
       {followedCollections.length > 0 && (
         <div className="space-y-3">
           <h2 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
-            Підписки
+            {t('subscriptions')}
           </h2>
           <div className="space-y-2">
             {followedCollections.map((col) => {
@@ -194,7 +195,7 @@ export function CollectionsList({
                     </div>
                     <div className="text-sm text-muted-foreground mt-0.5">
                       {t('words_count', { count: wordCount })} ·{' '}
-                      {col.users?.username && `від ${col.users.username}`}
+                      {col.users?.username && tCatalog('by_author', { username: col.users.username })}
                     </div>
                   </div>
                   <div className="flex items-center gap-1">

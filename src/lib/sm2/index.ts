@@ -23,7 +23,9 @@ export function sm2(input: SM2Input): SM2Output {
   let { easeFactor, interval, repetitions } = input
 
   if (quality < 3) {
-    // Failed — reset repetitions and interval
+    // Failed — reset repetitions and interval. Per canonical SM-2 the ease
+    // factor is NOT changed on a failed review, otherwise every lapse would
+    // permanently tank the word's scheduling.
     repetitions = 0
     interval = 1
   } else {
@@ -35,13 +37,13 @@ export function sm2(input: SM2Input): SM2Output {
       interval = Math.round(interval * easeFactor)
     }
     repetitions += 1
-  }
 
-  // Update ease factor (minimum 1.3)
-  easeFactor = Math.max(
-    1.3,
-    easeFactor + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02))
-  )
+    // Update ease factor (minimum 1.3) — successful reviews only
+    easeFactor = Math.max(
+      1.3,
+      easeFactor + (0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02))
+    )
+  }
 
   const nextReviewAt = new Date()
   nextReviewAt.setDate(nextReviewAt.getDate() + interval)

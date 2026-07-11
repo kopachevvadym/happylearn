@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useParams } from 'next/navigation'
+import { useTranslations } from 'next-intl'
 
 interface ActivityHeatmapProps {
   activityByDay: Record<string, number>
@@ -33,6 +34,13 @@ function toLocalKey(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
+/** Parse a "YYYY-MM-DD" key as *local* midnight — new Date(key) would parse UTC
+ * and shift the day for users west of UTC. */
+function fromLocalKey(key: string) {
+  const [y, m, d] = key.split('-').map(Number)
+  return new Date(y, m - 1, d)
+}
+
 function getLevel(count: number) {
   if (count === 0) return 0
   if (count < 5) return 1
@@ -43,10 +51,15 @@ function getLevel(count: number) {
 
 export function ActivityHeatmap({ activityByDay, weekdays }: ActivityHeatmapProps) {
   const { locale } = useParams<{ locale: string }>()
+  const t = useTranslations('progress')
   const scrollRef = useRef<HTMLDivElement>(null)
   const [tooltip, setTooltip] = useState<Tooltip | null>(null)
 
   const todayKey = toLocalKey(new Date())
+  const tooltipDateFmt = useMemo(
+    () => new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', year: 'numeric' }),
+    [locale]
+  )
 
   const { weeks, monthLabels } = useMemo(() => {
     const today = new Date()
@@ -81,12 +94,13 @@ export function ActivityHeatmap({ activityByDay, weekdays }: ActivityHeatmapProp
 
       const firstDay = week.find(Boolean)
       if (firstDay) {
-        const month = new Date(firstDay.date).getMonth()
+        const firstDate = fromLocalKey(firstDay.date)
+        const month = firstDate.getMonth()
         if (month !== prevMonth) {
           const next = monthLabels[monthLabels.length - 1]
           const span = next ? weeks.length - next.weekIndex : Infinity
           if (span >= 2) {
-            monthLabels.push({ weekIndex: weeks.length, label: fmt.format(new Date(firstDay.date)) })
+            monthLabels.push({ weekIndex: weeks.length, label: fmt.format(firstDate) })
           }
           prevMonth = month
         }
@@ -155,9 +169,11 @@ export function ActivityHeatmap({ activityByDay, weekdays }: ActivityHeatmapProp
                         day.date === todayKey ? 'ring-1 ring-primary ring-offset-1 ring-offset-card' : '',
                       ].join(' ')}
                       onMouseEnter={(e) => {
-                        const c = day.count
-                        const word = c === 0 ? '0 слів' : c === 1 ? '1 слово' : c < 5 ? `${c} слова` : `${c} слів`
-                        setTooltip({ text: `${word} — ${day.date}`, x: e.clientX, y: e.clientY })
+                        setTooltip({
+                          text: `${t('heatmap_words', { count: day.count })} — ${tooltipDateFmt.format(fromLocalKey(day.date))}`,
+                          x: e.clientX,
+                          y: e.clientY,
+                        })
                       }}
                       onMouseMove={(e) => setTooltip((t) => t ? { ...t, x: e.clientX, y: e.clientY } : null)}
                       onMouseLeave={() => setTooltip(null)}

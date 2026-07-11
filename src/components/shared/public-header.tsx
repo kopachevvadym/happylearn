@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { getTranslations } from 'next-intl/server'
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
 import { UserMenu } from './UserMenu'
 
 export async function PublicHeader() {

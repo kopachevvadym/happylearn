@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react'
 import { useTranslations } from 'next-intl'
 import { Plus, Search, Pencil, Trash2, CheckCircle, Circle, BookmarkPlus, X } from 'lucide-react'
-import { addWord, updateWord, deleteWord, toggleWordLearned, addWordToCollections } from '@/app/actions/words'
+import { addWord, updateWord, deleteWord, toggleWordLearned, addWordToCollections, addExistingWordsToCollection } from '@/app/actions/words'
 import { removeWordFromCollection } from '@/app/actions/collections'
 import type { Word } from '@/types'
 import { SUPPORTED_LANGUAGES } from '@/types'
@@ -95,6 +95,12 @@ export function CollectionWordsView({
           defaultTargetLang={defaultTargetLang}
           onSubmit={async (formData) => {
             const result = await addWord(formData)
+            // addWord links only the default dictionary — also link the word
+            // to the collection the user is actually looking at.
+            if (!result?.error && result?.data) {
+              const linkResult = await addExistingWordsToCollection([result.data.id], collectionId)
+              if (linkResult?.error) return linkResult
+            }
             if (!result?.error) setShowAddForm(false)
             return result
           }}
@@ -104,6 +110,7 @@ export function CollectionWordsView({
 
       {editingWord && (
         <WordForm
+          key={editingWord.id}
           word={editingWord}
           defaultSourceLang={editingWord.source_lang}
           defaultTargetLang={editingWord.target_lang}
@@ -118,7 +125,7 @@ export function CollectionWordsView({
 
       {filtered.length === 0 ? (
         <div className="text-center py-16 text-muted-foreground">
-          {search ? 'Нічого не знайдено' : t('empty_state')}
+          {search ? t('no_results') : t('empty_state')}
         </div>
       ) : (
         <div className="space-y-2">
@@ -187,7 +194,7 @@ export function CollectionWordsView({
                       <button
                         onClick={() => handleRemoveFromCollection(word.id)}
                         disabled={isPending}
-                        title="Видалити зі збірки"
+                        title={t('remove_from_collection')}
                         className="p-1.5 rounded-lg hover:bg-orange-100 transition-colors text-muted-foreground hover:text-orange-600 dark:hover:bg-orange-950/30"
                       >
                         <X className="w-4 h-4" />

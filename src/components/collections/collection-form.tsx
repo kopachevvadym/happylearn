@@ -26,6 +26,8 @@ export function CollectionForm({
   onCancel,
 }: CollectionFormProps) {
   const t = useTranslations('collections')
+  const tWords = useTranslations('words')
+  const tCommon = useTranslations('common')
   const [isPublic, setIsPublic] = useState(collection?.is_public ?? false)
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
@@ -75,7 +77,7 @@ export function CollectionForm({
 
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1">
-            <label className="text-sm font-medium">Мова слів</label>
+            <label className="text-sm font-medium">{tWords('sourceLanguage')}</label>
             <select
               name="source_lang"
               defaultValue={collection?.source_lang ?? defaultSourceLang}
@@ -87,7 +89,7 @@ export function CollectionForm({
             </select>
           </div>
           <div className="space-y-1">
-            <label className="text-sm font-medium">Мова перекладу</label>
+            <label className="text-sm font-medium">{tWords('targetLanguage')}</label>
             <select
               name="target_lang"
               defaultValue={collection?.target_lang ?? defaultTargetLang}
@@ -118,14 +120,14 @@ export function CollectionForm({
             onClick={onCancel}
             className="flex-1 h-10 border border-input rounded-lg text-sm hover:bg-accent transition-colors"
           >
-            Скасувати
+            {tCommon('cancel')}
           </button>
           <button
             type="submit"
             disabled={isPending}
             className="flex-1 h-10 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-60"
           >
-            {isPending ? '...' : collection ? 'Зберегти' : 'Створити'}
+            {isPending ? '...' : collection ? tCommon('save') : t('create_btn')}
           </button>
         </div>
       </form>

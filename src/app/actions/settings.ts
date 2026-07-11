@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
-import { randomBytes } from 'crypto'
+import { createHash, randomBytes } from 'crypto'
 import { z } from 'zod'
 
 const profileSchema = z.object({
@@ -40,7 +40,7 @@ export async function updateProfile(formData: FormData) {
 
   if (error) return { error: error.message }
 
-  revalidatePath('/settings')
+  revalidatePath('/[locale]/settings', 'page')
   return { success: true }
 }
 
@@ -49,19 +49,33 @@ export async function updateLanguageSettings(formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Unauthorized' }
 
+  const langSchema = z.object({
+    source_lang: z.string().min(2).max(10),
+    target_lang: z.string().min(2).max(10),
+    daily_goal: z.coerce.number().int().min(1).max(500),
+  })
+  const parsed = langSchema.safeParse({
+    source_lang: formData.get('source_lang'),
+    target_lang: formData.get('target_lang'),
+    daily_goal: formData.get('daily_goal'),
+  })
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? 'Invalid data' }
+  }
+
   const { error } = await supabase
     .from('users')
     .update({
-      default_source_lang: formData.get('source_lang') as string,
-      default_target_lang: formData.get('target_lang') as string,
-      daily_goal: parseInt(formData.get('daily_goal') as string, 10),
+      default_source_lang: parsed.data.source_lang,
+      default_target_lang: parsed.data.target_lang,
+      daily_goal: parsed.data.daily_goal,
     })
     .eq('id', user.id)
 
   if (error) return { error: error.message }
 
-  revalidatePath('/settings')
-  revalidatePath('/dashboard')
+  revalidatePath('/[locale]/settings', 'page')
+  revalidatePath('/[locale]/dashboard', 'page')
   return { success: true }
 }
 
@@ -72,16 +86,18 @@ export async function createApiKey(name: string) {
 
   const key = `hl_${randomBytes(32).toString('hex')}`
   const prefix = key.substring(0, 10)
+  // Only the hash is persisted; the plaintext key is shown to the user once
+  const keyHash = createHash('sha256').update(key).digest('hex')
 
   const { data, error } = await supabase
     .from('api_keys')
-    .insert({ user_id: user.id, name, key, prefix })
+    .insert({ user_id: user.id, name, key_hash: keyHash, prefix })
     .select()
     .single()
 
   if (error) return { error: error.message }
 
-  revalidatePath('/settings')
+  revalidatePath('/[locale]/settings', 'page')
   return { success: true, data: { ...data, key } }
 }
 
@@ -98,7 +114,7 @@ export async function deleteApiKey(keyId: string) {
 
   if (error) return { error: error.message }
 
-  revalidatePath('/settings')
+  revalidatePath('/[locale]/settings', 'page')
   return { success: true }
 }
 
@@ -118,9 +134,9 @@ export async function exportData(collectionId?: string) {
       .select('word_id')
       .eq('collection_id', collectionId)
 
-    if (cws?.length) {
-      query = query.in('id', cws.map((cw) => cw.word_id))
-    }
+    // Always constrain to the collection: an empty or foreign collection must
+    // export nothing, not fall through to the user's entire dictionary.
+    query = query.in('id', (cws ?? []).map((cw) => cw.word_id))
   }
 
   const { data: words, error } = await query
@@ -176,8 +192,8 @@ export async function importWords(
     }
   }
 
-  revalidatePath('/words')
-  revalidatePath('/dashboard')
+  revalidatePath('/[locale]/words', 'page')
+  revalidatePath('/[locale]/dashboard', 'page')
   return { success: true, inserted: toInsert.length, updated: toUpdate.length }
 }
 
@@ -253,7 +269,13 @@ export async function importBackup(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Unauthorized' }
 
-  const plainWords = wordsData.map(({ progress: _p, ...w }) => w)
+  const plainWords = wordsData.map((w) => ({
+    word: w.word,
+    translations: w.translations,
+    examples: w.examples,
+    source_lang: w.source_lang,
+    target_lang: w.target_lang,
+  }))
   const importResult = await importWords(plainWords, skipDuplicates)
   if (!importResult || 'error' in importResult) return importResult
 
@@ -287,14 +309,17 @@ export async function importBackup(
       })
 
       if (progressRecords.length > 0) {
-        await supabase
+        // Must match the unique(user_id, word_id) constraint — a bare
+        // 'word_id' has no matching constraint and made the whole upsert fail.
+        const { error: progressError } = await supabase
           .from('word_progress')
-          .upsert(progressRecords, { onConflict: 'word_id' })
+          .upsert(progressRecords, { onConflict: 'user_id,word_id' })
+        if (progressError) return { error: progressError.message }
       }
     }
   }
 
-  revalidatePath('/words')
-  revalidatePath('/dashboard')
+  revalidatePath('/[locale]/words', 'page')
+  revalidatePath('/[locale]/dashboard', 'page')
   return { success: true, inserted: importResult.inserted, updated: importResult.updated }
 }

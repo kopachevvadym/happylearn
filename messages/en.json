@@ -22,7 +22,9 @@
     "or": "or",
     "and": "and",
     "copied": "Copied!",
-    "clear": "Clear"
+    "clear": "Clear",
+    "theme_light": "Light theme",
+    "theme_dark": "Dark theme"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -148,7 +150,8 @@
     "mergeConfirmTitle": "Merge {count} {count, plural, one {duplicate} other {duplicates}}?",
     "mergeConfirmDescription": "Words with the same spelling will be merged. Translations and examples will be preserved. The best progress will be kept.",
     "mergeSuccess": "Merged {merged} {merged, plural, one {duplicate} other {duplicates}} in {groups} {groups, plural, one {group} other {groups}}",
-    "merge": "Merge"
+    "merge": "Merge",
+    "remove_from_collection": "Remove from collection"
   },
   "collections": {
     "title": "Collections",
@@ -168,7 +171,12 @@
     "delete_confirm": "Delete collection \"{name}\"?",
     "cant_delete_default": "Cannot delete the default dictionary",
     "empty_state": "No collections. Create your first!",
-    "add_words": "Add words"
+    "add_words": "Add words",
+    "copy_suffix": "copy",
+    "my_dictionary": "My Dictionary",
+    "my_collections": "My collections",
+    "subscriptions": "Subscriptions",
+    "create_btn": "Create"
   },
   "study": {
     "title": "Study now",
@@ -245,7 +253,8 @@
     "weekday_wed": "Wed",
     "weekday_thu": "Thu",
     "weekday_fri": "Fri",
-    "weekday_sat": "Sat"
+    "weekday_sat": "Sat",
+    "heatmap_words": "{count, plural, one {# word} other {# words}}"
   },
   "catalog": {
     "title": "Collection Catalog",
@@ -258,7 +267,10 @@
     "size_medium": "Medium (20–100)",
     "size_large": "Large (100+)",
     "by_author": "by {username}",
-    "login_to_follow": "Sign in to follow"
+    "login_to_follow": "Sign in to follow",
+    "all_languages": "All languages",
+    "no_results": "Nothing found",
+    "load_more": "Load more"
   },
   "profile": {
     "streak": "{count} days in a row",
@@ -426,7 +438,9 @@
     "noWords": "No words",
     "notFound": "Nothing found",
     "loginToSelect": "Sign in to select words",
-    "searchPlaceholder": "Search words..."
+    "searchPlaceholder": "Search words...",
+    "word": "Word",
+    "translation": "Translation"
   },
   "errors": {
     "required": "Required field",
@@ -435,6 +449,18 @@
     "username_taken": "This username is already taken",
     "generic": "Something went wrong. Please try again.",
     "not_found": "Not found",
-    "unauthorized": "Authorization required"
+    "unauthorized": "Authorization required",
+    "try_again": "Try again",
+    "word_required": "Word is required",
+    "min_one_translation": "At least one translation is required",
+    "invalid_data": "Invalid data",
+    "no_valid_rows": "No valid rows",
+    "collection_not_found": "Collection not found",
+    "collections_not_found": "Collections not found",
+    "name_required": "Name is required",
+    "cant_delete_default": "Cannot delete the default dictionary",
+    "cant_follow_own": "You cannot follow your own collection",
+    "too_long": "Value is too long",
+    "invalid_credentials": "Invalid email or password"
   }
 }

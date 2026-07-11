@@ -14,366 +14,574 @@ export type Database = {
   }
   public: {
     Tables: {
-      users: {
+      api_keys: {
         Row: {
+          created_at: string | null
           id: string
-          email: string
-          username: string
-          avatar_url: string | null
-          display_role: string | null
-          bio: string | null
-          default_source_lang: string
-          default_target_lang: string
-          daily_goal: number
-          onboarding_completed: boolean
-          created_at: string
-        }
-        Insert: {
-          id: string
-          email: string
-          username: string
-          avatar_url?: string | null
-          display_role?: string | null
-          bio?: string | null
-          default_source_lang?: string
-          default_target_lang?: string
-          daily_goal?: number
-          onboarding_completed?: boolean
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          email?: string
-          username?: string
-          avatar_url?: string | null
-          display_role?: string | null
-          bio?: string | null
-          default_source_lang?: string
-          default_target_lang?: string
-          daily_goal?: number
-          onboarding_completed?: boolean
-          created_at?: string
-        }
-        Relationships: []
-      }
-      words: {
-        Row: {
-          id: string
-          user_id: string
-          word: string
-          translations: string[]
-          examples: string[]
-          source_lang: string
-          target_lang: string
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          word: string
-          translations?: string[]
-          examples?: string[]
-          source_lang: string
-          target_lang: string
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          word?: string
-          translations?: string[]
-          examples?: string[]
-          source_lang?: string
-          target_lang?: string
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      collections: {
-        Row: {
-          id: string
-          user_id: string
+          key_hash: string
+          last_used_at: string | null
           name: string
-          description: string | null
-          source_lang: string
-          target_lang: string
-          is_public: boolean
-          is_default: boolean
-          created_at: string
-          updated_at: string
+          prefix: string
+          user_id: string
         }
         Insert: {
+          created_at?: string | null
           id?: string
-          user_id: string
+          key_hash: string
+          last_used_at?: string | null
           name: string
-          description?: string | null
-          source_lang: string
-          target_lang: string
-          is_public?: boolean
-          is_default?: boolean
-          created_at?: string
-          updated_at?: string
+          prefix?: string
+          user_id: string
         }
         Update: {
+          created_at?: string | null
           id?: string
-          user_id?: string
+          key_hash?: string
+          last_used_at?: string | null
           name?: string
-          description?: string | null
-          source_lang?: string
-          target_lang?: string
-          is_public?: boolean
-          is_default?: boolean
-          created_at?: string
-          updated_at?: string
+          prefix?: string
+          user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "api_keys_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "api_keys_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
-      collection_words: {
+      badges: {
         Row: {
+          description: string | null
+          icon_url: string | null
           id: string
-          collection_id: string
-          word_id: string
-          added_at: string
+          name: string
+          slug: string
         }
         Insert: {
+          description?: string | null
+          icon_url?: string | null
           id?: string
-          collection_id: string
-          word_id: string
-          added_at?: string
+          name: string
+          slug: string
         }
         Update: {
+          description?: string | null
+          icon_url?: string | null
           id?: string
-          collection_id?: string
-          word_id?: string
-          added_at?: string
+          name?: string
+          slug?: string
         }
         Relationships: []
       }
       collection_follows: {
         Row: {
+          collection_id: string
+          created_at: string | null
           id: string
           user_id: string
-          collection_id: string
-          created_at: string
         }
         Insert: {
+          collection_id: string
+          created_at?: string | null
           id?: string
           user_id: string
-          collection_id: string
-          created_at?: string
         }
         Update: {
+          collection_id?: string
+          created_at?: string | null
           id?: string
           user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "collection_follows_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "collections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collection_follows_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collection_follows_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      collection_words: {
+        Row: {
+          added_at: string | null
+          collection_id: string
+          id: string
+          word_id: string
+        }
+        Insert: {
+          added_at?: string | null
+          collection_id: string
+          id?: string
+          word_id: string
+        }
+        Update: {
+          added_at?: string | null
           collection_id?: string
-          created_at?: string
+          id?: string
+          word_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "collection_words_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "collections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collection_words_word_id_fkey"
+            columns: ["word_id"]
+            isOneToOne: false
+            referencedRelation: "words"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      collections: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          is_default: boolean | null
+          is_public: boolean | null
+          name: string
+          source_lang: string
+          target_lang: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_default?: boolean | null
+          is_public?: boolean | null
+          name: string
+          source_lang: string
+          target_lang: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_default?: boolean | null
+          is_public?: boolean | null
+          name?: string
+          source_lang?: string
+          target_lang?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "collections_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collections_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      study_session_words: {
+        Row: {
+          format: string
+          id: string
+          is_correct: boolean
+          session_id: string
+          word_id: string
+        }
+        Insert: {
+          format: string
+          id?: string
+          is_correct: boolean
+          session_id: string
+          word_id: string
+        }
+        Update: {
+          format?: string
+          id?: string
+          is_correct?: boolean
+          session_id?: string
+          word_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "study_session_words_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "study_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "study_session_words_word_id_fkey"
+            columns: ["word_id"]
+            isOneToOne: false
+            referencedRelation: "words"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      study_sessions: {
+        Row: {
+          collection_ids: Json
+          correct_answers: number | null
+          finished_at: string | null
+          id: string
+          started_at: string | null
+          total_words: number | null
+          user_id: string
+        }
+        Insert: {
+          collection_ids?: Json
+          correct_answers?: number | null
+          finished_at?: string | null
+          id?: string
+          started_at?: string | null
+          total_words?: number | null
+          user_id: string
+        }
+        Update: {
+          collection_ids?: Json
+          correct_answers?: number | null
+          finished_at?: string | null
+          id?: string
+          started_at?: string | null
+          total_words?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "study_sessions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "study_sessions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_badges: {
+        Row: {
+          badge_id: string
+          earned_at: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          badge_id: string
+          earned_at?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          badge_id?: string
+          earned_at?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_badges_badge_id_fkey"
+            columns: ["badge_id"]
+            isOneToOne: false
+            referencedRelation: "badges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_badges_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_badges_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_streaks: {
+        Row: {
+          current_streak: number | null
+          id: string
+          last_activity_at: string | null
+          longest_streak: number | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          current_streak?: number | null
+          id?: string
+          last_activity_at?: string | null
+          longest_streak?: number | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          current_streak?: number | null
+          id?: string
+          last_activity_at?: string | null
+          longest_streak?: number | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_streaks_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_streaks_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      users: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          created_at: string | null
+          daily_goal: number | null
+          default_source_lang: string | null
+          default_target_lang: string | null
+          display_role: string | null
+          email: string
+          id: string
+          onboarding_completed: boolean | null
+          username: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string | null
+          daily_goal?: number | null
+          default_source_lang?: string | null
+          default_target_lang?: string | null
+          display_role?: string | null
+          email: string
+          id: string
+          onboarding_completed?: boolean | null
+          username: string
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string | null
+          daily_goal?: number | null
+          default_source_lang?: string | null
+          default_target_lang?: string | null
+          display_role?: string | null
+          email?: string
+          id?: string
+          onboarding_completed?: boolean | null
+          username?: string
         }
         Relationships: []
       }
       word_progress: {
         Row: {
+          created_at: string | null
+          ease_factor: number | null
           id: string
+          interval: number | null
+          is_learned: boolean | null
+          next_review_at: string | null
+          repetitions: number | null
+          updated_at: string | null
           user_id: string
           word_id: string
-          ease_factor: number
-          interval: number
-          repetitions: number
-          next_review_at: string
-          is_learned: boolean
-          created_at: string
-          updated_at: string
         }
         Insert: {
+          created_at?: string | null
+          ease_factor?: number | null
           id?: string
+          interval?: number | null
+          is_learned?: boolean | null
+          next_review_at?: string | null
+          repetitions?: number | null
+          updated_at?: string | null
           user_id: string
           word_id: string
-          ease_factor?: number
-          interval?: number
-          repetitions?: number
-          next_review_at?: string
-          is_learned?: boolean
-          created_at?: string
-          updated_at?: string
         }
         Update: {
+          created_at?: string | null
+          ease_factor?: number | null
           id?: string
+          interval?: number | null
+          is_learned?: boolean | null
+          next_review_at?: string | null
+          repetitions?: number | null
+          updated_at?: string | null
           user_id?: string
           word_id?: string
-          ease_factor?: number
-          interval?: number
-          repetitions?: number
-          next_review_at?: string
-          is_learned?: boolean
-          created_at?: string
-          updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "word_progress_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "word_progress_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "word_progress_word_id_fkey"
+            columns: ["word_id"]
+            isOneToOne: false
+            referencedRelation: "words"
+            referencedColumns: ["id"]
+          },
+        ]
       }
-      user_streaks: {
+      words: {
         Row: {
+          created_at: string | null
+          examples: Json
           id: string
+          source_lang: string
+          target_lang: string
+          translations: Json
+          updated_at: string | null
           user_id: string
-          current_streak: number
-          longest_streak: number
-          last_activity_at: string | null
-          updated_at: string
+          word: string
         }
         Insert: {
+          created_at?: string | null
+          examples?: Json
           id?: string
+          source_lang: string
+          target_lang: string
+          translations?: Json
+          updated_at?: string | null
           user_id: string
-          current_streak?: number
-          longest_streak?: number
-          last_activity_at?: string | null
-          updated_at?: string
+          word: string
         }
         Update: {
+          created_at?: string | null
+          examples?: Json
           id?: string
+          source_lang?: string
+          target_lang?: string
+          translations?: Json
+          updated_at?: string | null
           user_id?: string
-          current_streak?: number
-          longest_streak?: number
-          last_activity_at?: string | null
-          updated_at?: string
+          word?: string
         }
-        Relationships: []
-      }
-      badges: {
-        Row: {
-          id: string
-          slug: string
-          name: string
-          description: string | null
-          icon_url: string | null
-        }
-        Insert: {
-          id?: string
-          slug: string
-          name: string
-          description?: string | null
-          icon_url?: string | null
-        }
-        Update: {
-          id?: string
-          slug?: string
-          name?: string
-          description?: string | null
-          icon_url?: string | null
-        }
-        Relationships: []
-      }
-      user_badges: {
-        Row: {
-          id: string
-          user_id: string
-          badge_id: string
-          earned_at: string
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          badge_id: string
-          earned_at?: string
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          badge_id?: string
-          earned_at?: string
-        }
-        Relationships: []
-      }
-      api_keys: {
-        Row: {
-          id: string
-          user_id: string
-          key: string
-          prefix: string
-          name: string
-          last_used_at: string | null
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          key: string
-          prefix?: string
-          name: string
-          last_used_at?: string | null
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          key?: string
-          prefix?: string
-          name?: string
-          last_used_at?: string | null
-          created_at?: string
-        }
-        Relationships: []
-      }
-      study_sessions: {
-        Row: {
-          id: string
-          user_id: string
-          collection_ids: string[]
-          total_words: number
-          correct_answers: number
-          started_at: string
-          finished_at: string | null
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          collection_ids?: string[]
-          total_words?: number
-          correct_answers?: number
-          started_at?: string
-          finished_at?: string | null
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          collection_ids?: string[]
-          total_words?: number
-          correct_answers?: number
-          started_at?: string
-          finished_at?: string | null
-        }
-        Relationships: []
-      }
-      study_session_words: {
-        Row: {
-          id: string
-          session_id: string
-          word_id: string
-          format: 'flip' | 'quiz' | 'write'
-          is_correct: boolean
-        }
-        Insert: {
-          id?: string
-          session_id: string
-          word_id: string
-          format: 'flip' | 'quiz' | 'write'
-          is_correct: boolean
-        }
-        Update: {
-          id?: string
-          session_id?: string
-          word_id?: string
-          format?: 'flip' | 'quiz' | 'write'
-          is_correct?: boolean
-        }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "words_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "words_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
-      [_ in never]: never
+      public_profiles: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          created_at: string | null
+          default_source_lang: string | null
+          default_target_lang: string | null
+          display_role: string | null
+          id: string | null
+          username: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string | null
+          default_source_lang?: string | null
+          default_target_lang?: string | null
+          display_role?: string | null
+          id?: string | null
+          username?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string | null
+          default_source_lang?: string | null
+          default_target_lang?: string | null
+          display_role?: string | null
+          id?: string | null
+          username?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
-      [_ in never]: never
+      get_public_profile_stats: {
+        Args: { profile_id: string }
+        Returns: {
+          learned_count: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

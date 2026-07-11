@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useTransition, useCallback } from 'react'
+import { useState, useTransition, useCallback, useRef, useEffect } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useTranslations } from 'next-intl'
 import { Volume2, X } from 'lucide-react'
 import {
@@ -9,6 +10,7 @@ import {
   getStudyCards,
   getAdditionalCards,
   createStudySession,
+  getDistractorTranslations,
 } from '@/app/actions/study'
 import type { StudyCard } from '@/types'
 import { FlipCard } from './flip-card'
@@ -38,6 +40,7 @@ export function StudySession({
   onFinish,
 }: StudySessionProps) {
   const t = useTranslations('study')
+  const queryClient = useQueryClient()
 
   const [cards, setCards] = useState(initialCards)
   const [sessionId, setSessionId] = useState(initialSessionId)
@@ -50,7 +53,27 @@ export function StudySession({
   const [isAdditional, setIsAdditional] = useState(false)
   const [isPending, startTransition] = useTransition()
 
+  // Grades are written fire-and-forget so the next card shows instantly;
+  // flushed before the session is finalized.
+  const pendingSubmits = useRef<Promise<unknown>[]>([])
+  // Guards against double-grading one card (double-click, Enter+click).
+  const answeredIndex = useRef(-1)
+
   const currentCard = cards[currentIndex]
+
+  // Small batches can't provide enough quiz distractors — fetch extras
+  // from the rest of the selected collections once per session.
+  const [extraDistractors, setExtraDistractors] = useState<string[]>([])
+  useEffect(() => {
+    if (initialCards.length >= 4) return
+    let cancelled = false
+    getDistractorTranslations(collectionIds).then((pool) => {
+      if (!cancelled) setExtraDistractors(pool)
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [initialCards.length, collectionIds])
 
   const speakWord = (word: string, lang: string) => {
     if (typeof window === 'undefined' || !window.speechSynthesis) return
@@ -61,44 +84,45 @@ export function StudySession({
 
   const handleAnswer = useCallback(
     (quality: number) => {
+      if (answeredIndex.current === currentIndex) return
+      answeredIndex.current = currentIndex
+
       const card = cards[currentIndex]
       const isNew = !card.progress || card.progress.repetitions === 0
-      startTransition(async () => {
-        const result = await submitStudyAnswer(
-          sessionId,
-          card.word.id,
-          card.format,
-          quality,
-          card.progress
-            ? {
-                ease_factor: card.progress.ease_factor,
-                interval: card.progress.interval,
-                repetitions: card.progress.repetitions,
-              }
-            : null,
-          isAdditional
+      // Mirrors the server's grading rule (quality >= 3) so the UI can
+      // advance without waiting for the round-trip.
+      const isCorrect = quality >= 3
+      const newBatchCorrect = batchCorrect + (isCorrect ? 1 : 0)
+      const newBatchNewLearned = batchNewLearned + (isNew && isCorrect ? 1 : 0)
+
+      pendingSubmits.current.push(
+        submitStudyAnswer(sessionId, card.word.id, card.format, quality, isAdditional).catch(
+          (err) => {
+            console.error('Failed to save answer', err)
+          }
         )
+      )
 
-        const isCorrect = result?.isCorrect ?? false
-        const newBatchCorrect = batchCorrect + (isCorrect ? 1 : 0)
-        const newBatchNewLearned = batchNewLearned + (isNew && isCorrect ? 1 : 0)
+      setBatchCorrect(newBatchCorrect)
+      setBatchNewLearned(newBatchNewLearned)
 
-        const isLastCard = currentIndex + 1 >= cards.length
+      const isLastCard = currentIndex + 1 >= cards.length
+      if (!isLastCard) {
+        setCurrentIndex((i) => i + 1)
+        return
+      }
 
-        if (!isLastCard) {
-          setBatchCorrect(newBatchCorrect)
-          setBatchNewLearned(newBatchNewLearned)
-          setCurrentIndex((i) => i + 1)
-          return
-        }
+      // Last card — flush pending grades, finish the session, pick next screen
+      startTransition(async () => {
+        await Promise.allSettled(pendingSubmits.current)
+        pendingSubmits.current = []
 
-        // Last card — finish this session
         const newTotalDone = totalDone + cards.length
         await finishStudySession(sessionId, cards.length, newBatchCorrect)
-
-        setBatchCorrect(newBatchCorrect)
-        setBatchNewLearned(newBatchNewLearned)
         setTotalDone(newTotalDone)
+        // Word progress changed server-side — drop the client caches so the
+        // words list / timeline / learned badges reflect the new state.
+        queryClient.invalidateQueries({ queryKey: ['words'] })
 
         if (isAdditional) {
           // Additional training complete — just show results with no Continue
@@ -117,7 +141,7 @@ export function StudySession({
         }
       })
     },
-    [cards, currentIndex, sessionId, batchCorrect, batchNewLearned, totalDone, collectionIds, isAdditional]
+    [cards, currentIndex, sessionId, batchCorrect, batchNewLearned, totalDone, collectionIds, isAdditional, queryClient]
   )
 
   const handleContinue = useCallback(() => {
@@ -125,6 +149,7 @@ export function StudySession({
     startTransition(async () => {
       const sessionResult = await createStudySession(collectionIds)
       if (!sessionResult?.data) return
+      answeredIndex.current = -1
       setSessionId(sessionResult.data.id)
       setCards(nextBatch)
       setNextBatch(null)
@@ -145,6 +170,7 @@ export function StudySession({
         onFinish()
         return
       }
+      answeredIndex.current = -1
       setSessionId(sessionResult.data.id)
       setCards(additionalCards)
       setNextBatch(null)
@@ -238,14 +264,23 @@ export function StudySession({
         </div>
       )}
 
+      {/* key remounts the card per word: state (flip/selection/input) never
+          bleeds between cards and autofocus fires for each new card */}
       {currentCard.format === 'flip' && (
-        <FlipCard word={currentCard.word} onAnswer={handleAnswer} disabled={isPending} />
+        <FlipCard key={currentCard.word.id} word={currentCard.word} onAnswer={handleAnswer} disabled={isPending} />
       )}
       {currentCard.format === 'quiz' && (
-        <QuizCard word={currentCard.word} allCards={cards} onAnswer={handleAnswer} disabled={isPending} />
+        <QuizCard
+          key={currentCard.word.id}
+          word={currentCard.word}
+          allCards={cards}
+          extraDistractors={extraDistractors}
+          onAnswer={handleAnswer}
+          disabled={isPending}
+        />
       )}
       {currentCard.format === 'write' && (
-        <WriteCard word={currentCard.word} onAnswer={handleAnswer} disabled={isPending} />
+        <WriteCard key={currentCard.word.id} word={currentCard.word} onAnswer={handleAnswer} disabled={isPending} />
       )}
 
       {debugMode && <DebugCardPanel card={currentCard} />}

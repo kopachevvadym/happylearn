@@ -7,41 +7,56 @@ import type { StudyCard } from '@/types'
 interface QuizCardProps {
   word: StudyCard['word']
   allCards: StudyCard[]
+  /** Fallback pool for batches with fewer than 4 cards */
+  extraDistractors?: string[]
   onAnswer: (quality: number) => void
   disabled: boolean
 }
 
-export function QuizCard({ word, allCards, onAnswer, disabled }: QuizCardProps) {
+function shuffle<T>(arr: T[]): T[] {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[arr[i], arr[j]] = [arr[j], arr[i]]
+  }
+  return arr
+}
+
+export function QuizCard({ word, allCards, extraDistractors = [], onAnswer, disabled }: QuizCardProps) {
   const t = useTranslations('study')
   const [selected, setSelected] = useState<string | null>(null)
 
   const correctAnswer = (word.translations as string[])[0]
 
   const options = useMemo(() => {
-    const distractors = allCards
-      .filter((c) => c.word.id !== word.id)
-      .map((c) => (c.word.translations as string[])[0])
-      .filter(Boolean)
-      .sort(() => Math.random() - 0.5)
-      .slice(0, 3)
-
-    return [...distractors, correctAnswer].sort(() => Math.random() - 0.5)
-  }, [word.id, allCards, correctAnswer])
+    // Dedupe distractors against each other and the correct answer, so the
+    // correct translation never appears twice among the options. The extra
+    // pool tops up batches that are too small to provide 3 distractors.
+    const distractors = [
+      ...new Set(
+        [
+          ...allCards
+            .filter((c) => c.word.id !== word.id)
+            .map((c) => (c.word.translations as string[])[0]),
+          ...extraDistractors,
+        ].filter((tr): tr is string => Boolean(tr) && tr !== correctAnswer)
+      ),
+    ]
+    return shuffle([...shuffle(distractors).slice(0, 3), correctAnswer])
+  }, [word.id, allCards, extraDistractors, correctAnswer])
 
   const handleSelect = (option: string) => {
     if (selected || disabled) return
     setSelected(option)
-    setTimeout(() => {
-      onAnswer(option === correctAnswer ? 4 : 1)
-      setSelected(null)
-    }, 1200)
+    const isCorrect = option === correctAnswer
+    // Short pause on success; longer on a miss so the correct option registers.
+    setTimeout(() => onAnswer(isCorrect ? 4 : 1), isCorrect ? 500 : 1200)
   }
 
   return (
     <div className="space-y-4">
       <p className="text-center text-sm text-muted-foreground">{t('quiz_title')}</p>
       <div className="grid grid-cols-1 gap-3">
-        {options.map((option, i) => {
+        {options.map((option) => {
           const isSelected = selected === option
           const isCorrect = option === correctAnswer
           let style = 'border-border hover:border-primary/50 hover:bg-accent'
@@ -51,7 +66,7 @@ export function QuizCard({ word, allCards, onAnswer, disabled }: QuizCardProps) 
 
           return (
             <button
-              key={i}
+              key={option}
               type="button"
               onClick={() => handleSelect(option)}
               disabled={!!selected || disabled}

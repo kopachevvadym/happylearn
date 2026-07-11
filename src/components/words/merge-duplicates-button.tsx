@@ -7,9 +7,10 @@ import { mergeDuplicates } from '@/app/actions/words'
 interface MergeDuplicatesButtonProps {
   count: number
   onSuccess: (message: string) => void
+  onError: (message: string) => void
 }
 
-export function MergeDuplicatesButton({ count, onSuccess }: MergeDuplicatesButtonProps) {
+export function MergeDuplicatesButton({ count, onSuccess, onError }: MergeDuplicatesButtonProps) {
   const t = useTranslations('words')
   const tCommon = useTranslations('common')
   const [showConfirm, setShowConfirm] = useState(false)
@@ -20,6 +21,9 @@ export function MergeDuplicatesButton({ count, onSuccess }: MergeDuplicatesButto
       const result = await mergeDuplicates()
       if ('mergedCount' in result) {
         onSuccess(t('mergeSuccess', { merged: result.mergedCount ?? 0, groups: result.groupsCount ?? 0 }))
+      } else {
+        // A failed merge must not close silently as if it worked
+        onError(result.error ?? tCommon('error'))
       }
       setShowConfirm(false)
     })

@@ -1,8 +1,11 @@
+import { cache } from 'react'
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { type Database } from '@/types/database.types'
 
-export async function createClient() {
+// cache() memoizes per request: layout, page and nested components share one
+// client instance instead of re-creating it (and re-reading cookies) each call.
+export const createClient = cache(async () => {
   const cookieStore = await cookies()
 
   return createServerClient<Database>(
@@ -25,4 +28,4 @@ export async function createClient() {
       },
     }
   )
-}
+})

@@ -1,5 +1,5 @@
 import { useTranslations } from 'next-intl'
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
 import { BookOpen, Repeat2, Globe, Zap } from 'lucide-react'
 import { PublicHeader } from '@/components/shared/public-header'
 

@@ -9,7 +9,7 @@ import type { ApiKey } from '@/types'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-interface ApiKeyRow extends Pick<ApiKey, 'id' | 'name' | 'prefix' | 'last_used_at' | 'created_at'> {}
+type ApiKeyRow = Pick<ApiKey, 'id' | 'name' | 'prefix' | 'last_used_at' | 'created_at'>
 
 interface ApiKeysTabProps {
   apiKeys: ApiKeyRow[]
@@ -312,8 +312,15 @@ export function ApiKeysTab({ apiKeys: initialApiKeys }: ApiKeysTabProps) {
   const handleDelete = () => {
     if (!deleteTarget) return
     const { id } = deleteTarget
+    setError(null)
     startTransition(async () => {
-      await deleteApiKey(id)
+      const result = await deleteApiKey(id)
+      if (result?.error) {
+        // The key is still active server-side — don't lie by removing it
+        setError(result.error)
+        setDeleteTarget(null)
+        return
+      }
       setApiKeys((prev) => prev.filter((k) => k.id !== id))
       setDeleteTarget(null)
     })

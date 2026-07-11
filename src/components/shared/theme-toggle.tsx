@@ -1,14 +1,14 @@
 'use client'
 
 import { useTheme } from 'next-themes'
+import { useTranslations } from 'next-intl'
 import { Sun, Moon } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useMounted } from '@/hooks/use-mounted'
 
 export function ThemeToggle() {
+  const t = useTranslations('common')
   const { resolvedTheme, setTheme } = useTheme()
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => setMounted(true), [])
+  const mounted = useMounted()
 
   if (!mounted) {
     return <div className="w-[72px] h-8" />
@@ -25,7 +25,7 @@ export function ThemeToggle() {
             ? 'bg-background text-foreground shadow-sm'
             : 'text-muted-foreground hover:text-foreground'
         }`}
-        title="Світла тема"
+        title={t('theme_light')}
       >
         <Sun className="w-3.5 h-3.5" />
       </button>
@@ -36,7 +36,7 @@ export function ThemeToggle() {
             ? 'bg-background text-foreground shadow-sm'
             : 'text-muted-foreground hover:text-foreground'
         }`}
-        title="Темна тема"
+        title={t('theme_dark')}
       >
         <Moon className="w-3.5 h-3.5" />
       </button>

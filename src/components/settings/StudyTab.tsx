@@ -1,23 +1,24 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useTranslations } from 'next-intl'
+import { useMounted } from '@/hooks/use-mounted'
 
 const DEBUG_KEY = 'study_debug_mode'
 
 export function StudyTab() {
   const t = useTranslations('Settings')
-  const [debugMode, setDebugMode] = useState(false)
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => {
-    setMounted(true)
+  const mounted = useMounted()
+  // Lazy initializer runs once per render environment; on the server there is
+  // no localStorage, and the mounted gate below prevents hydration mismatch.
+  const [debugMode, setDebugMode] = useState(() => {
+    if (typeof window === 'undefined') return false
     try {
-      setDebugMode(localStorage.getItem(DEBUG_KEY) === 'true')
+      return localStorage.getItem(DEBUG_KEY) === 'true'
     } catch {
-      // ignore
+      return false
     }
-  }, [])
+  })
 
   const toggle = (value: boolean) => {
     setDebugMode(value)

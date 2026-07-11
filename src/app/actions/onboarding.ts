@@ -1,22 +1,25 @@
 'use server'
 
 import { redirect } from 'next/navigation'
+import { getLocale, getTranslations } from 'next-intl/server'
 import { createClient } from '@/lib/supabase/server'
 
 export async function completeOnboarding(formData: FormData) {
+  const t = await getTranslations('errors')
+
   const sourceLang = formData.get('source_lang') as string
   const targetLang = formData.get('target_lang') as string
   const dailyGoal = parseInt(formData.get('daily_goal') as string, 10)
 
-  if (!sourceLang || !targetLang || !dailyGoal) {
-    return { error: 'Заповніть всі поля' }
+  if (!sourceLang || !targetLang || !Number.isFinite(dailyGoal) || dailyGoal < 1 || dailyGoal > 500) {
+    return { error: t('invalid_data') }
   }
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
-    return { error: 'Необхідна авторизація' }
+    return { error: t('unauthorized') }
   }
 
   // Upsert user preferences (handles case where trigger didn't create the row)
@@ -36,20 +39,31 @@ export async function completeOnboarding(formData: FormData) {
     return { error: updateError.message }
   }
 
-  // Create default "My Dictionary" collection
-  const { error: collectionError } = await supabase
+  // Create the default dictionary once — there is no unique constraint on
+  // is_default, so re-running onboarding must not create a second one.
+  const { data: existingDefault } = await supabase
     .from('collections')
-    .insert({
-      user_id: user.id,
-      name: 'Мій словник',
-      source_lang: sourceLang,
-      target_lang: targetLang,
-      is_default: true,
-      is_public: false,
-    })
+    .select('id')
+    .eq('user_id', user.id)
+    .eq('is_default', true)
+    .maybeSingle()
 
-  if (collectionError && !collectionError.message.includes('duplicate')) {
-    return { error: collectionError.message }
+  if (!existingDefault) {
+    const tCol = await getTranslations('collections')
+    const { error: collectionError } = await supabase
+      .from('collections')
+      .insert({
+        user_id: user.id,
+        name: tCol('my_dictionary'),
+        source_lang: sourceLang,
+        target_lang: targetLang,
+        is_default: true,
+        is_public: false,
+      })
+
+    if (collectionError) {
+      return { error: collectionError.message }
+    }
   }
 
   // Initialize streak record
@@ -58,5 +72,6 @@ export async function completeOnboarding(formData: FormData) {
     { onConflict: 'user_id', ignoreDuplicates: true }
   )
 
-  redirect('/dashboard')
+  const locale = await getLocale()
+  redirect(`/${locale}/dashboard`)
 }

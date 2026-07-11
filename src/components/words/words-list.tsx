@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition, useRef, useEffect, useCallback } from 'react'
+import { useState, useTransition, useRef, useEffect } from 'react'
 import { useTranslations } from 'next-intl'
 import { Plus, Search, X, Pencil, Trash2, BookmarkPlus, AlertTriangle } from 'lucide-react'
 import { addWord, updateWord, deleteWord, addWordToCollections } from '@/app/actions/words'
@@ -18,6 +18,7 @@ interface WordsListProps {
   defaultSourceLang: string
   defaultTargetLang: string
   duplicatesCount: number
+  initialShowAddForm?: boolean
 }
 
 export function WordsList({
@@ -27,17 +28,24 @@ export function WordsList({
   defaultSourceLang,
   defaultTargetLang,
   duplicatesCount: initialDuplicatesCount,
+  initialShowAddForm = false,
 }: WordsListProps) {
   const t = useTranslations('words')
   const tCommon = useTranslations('common')
   const [search, setSearch] = useState('')
-  const [showAddForm, setShowAddForm] = useState(false)
+  const [showAddForm, setShowAddForm] = useState(initialShowAddForm)
   const [editingWord, setEditingWord] = useState<Word | null>(null)
   const [collectionModalWordId, setCollectionModalWordId] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
   const [selectedIds, setSelectedIds] = useState<string[]>([])
-  const [toast, setToast] = useState<string | null>(null)
+  const [toast, setToast] = useState<{ message: string; kind: 'success' | 'error' } | null>(null)
   const [duplicatesCount, setDuplicatesCount] = useState(initialDuplicatesCount)
+
+  // Adopt the server-computed count when the page refetches (words added,
+  // import finished) while keeping the optimistic reset after a merge.
+  useEffect(() => {
+    setDuplicatesCount(initialDuplicatesCount)
+  }, [initialDuplicatesCount])
 
   const filtered = words.filter((w) =>
     w.word.toLowerCase().includes(search.toLowerCase()) ||
@@ -64,15 +72,19 @@ export function WordsList({
     )
   }
 
-  const showToast = (message: string) => {
-    setToast(message)
-    setTimeout(() => setToast(null), 3000)
+  const showToast = (message: string, kind: 'success' | 'error' = 'success') => {
+    setToast({ message, kind })
+    setTimeout(() => setToast(null), kind === 'error' ? 5000 : 3000)
   }
 
   const handleDelete = (wordId: string, word: string) => {
     if (!confirm(t('delete_confirm', { word }))) return
+    // Drop the id from the selection too — a phantom selected id would make
+    // subsequent bulk actions fail on a nonexistent word.
+    setSelectedIds((prev) => prev.filter((x) => x !== wordId))
     startTransition(async () => {
-      await deleteWord(wordId)
+      const result = await deleteWord(wordId)
+      if (result?.error) showToast(result.error, 'error')
     })
   }
 
@@ -83,9 +95,13 @@ export function WordsList({
         <div
           role="status"
           aria-live="polite"
-          className="text-sm text-green-700 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900 rounded-lg px-3 py-2"
+          className={`text-sm rounded-lg px-3 py-2 border ${
+            toast.kind === 'error'
+              ? 'text-destructive bg-destructive/10 border-destructive/30'
+              : 'text-green-700 bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-900'
+          }`}
         >
-          {toast}
+          {toast.message}
         </div>
       )}
 
@@ -104,6 +120,7 @@ export function WordsList({
               setDuplicatesCount(0)
               showToast(message)
             }}
+            onError={(message) => showToast(message, 'error')}
           />
         </div>
       )}
@@ -156,9 +173,11 @@ export function WordsList({
         />
       )}
 
-      {/* Edit word form */}
+      {/* Edit word form — keyed by word id so switching the edit target
+          remounts the form instead of saving stale fields onto another word */}
       {editingWord && (
         <WordForm
+          key={editingWord.id}
           word={editingWord}
           defaultSourceLang={editingWord.source_lang}
           defaultTargetLang={editingWord.target_lang}
@@ -287,6 +306,7 @@ export function WordsList({
           setSelectedIds([])
           showToast(message)
         }}
+        onActionError={(message) => showToast(message, 'error')}
       />
     </div>
   )

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useTransition, useCallback } from 'react'
+import { useState, useEffect, useTransition, useCallback, useRef } from 'react'
 import { useTranslations } from 'next-intl'
 import { GraduationCap, ChevronLeft } from 'lucide-react'
 import { getStudyCards, createStudySession, getScheduledCount } from '@/app/actions/study'
@@ -32,6 +32,9 @@ export function StudySetup({ collections, completedToday }: StudySetupProps) {
 
   const [isPending, startTransition] = useTransition()
   const [isCountPending, startCountTransition] = useTransition()
+  // Serial number for count requests — rapid collection toggles must not let
+  // a slow earlier response overwrite a newer one.
+  const countRequestId = useRef(0)
 
   // Load saved selection and debug mode from localStorage
   useEffect(() => {
@@ -40,6 +43,7 @@ export function StudySetup({ collections, completedToday }: StudySetupProps) {
       if (saved) {
         const ids: string[] = JSON.parse(saved)
         const valid = ids.filter((id) => collections.some((c) => c.id === id))
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot localStorage hydration after mount; a lazy initializer would mismatch SSR markup
         if (valid.length) setSelected(new Set(valid))
       }
     } catch {
@@ -53,19 +57,21 @@ export function StudySetup({ collections, completedToday }: StudySetupProps) {
   }, [collections])
 
   const fetchScheduledCount = useCallback((ids: string[]) => {
+    const requestId = ++countRequestId.current
     if (!ids.length) {
       setScheduledCount(0)
       return
     }
     startCountTransition(async () => {
       const count = await getScheduledCount(ids)
-      setScheduledCount(count)
+      if (countRequestId.current === requestId) setScheduledCount(count)
     })
   }, [])
 
   // Fetch scheduled count when selection changes
   useEffect(() => {
     const ids = Array.from(selected)
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- server fetch keyed off selection; result lands via guarded transition
     fetchScheduledCount(ids)
   }, [selected, fetchScheduledCount])
 

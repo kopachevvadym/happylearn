@@ -1,15 +1,17 @@
-import Link from 'next/link'
 import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query'
+import { Link } from '@/i18n/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getTranslations } from 'next-intl/server'
-import { BookOpen, Flame, GraduationCap, Library, Plus, Trophy } from 'lucide-react'
+import { BookOpen, Flame, GraduationCap, Library, Plus } from 'lucide-react'
 import { ActivityHeatmap } from '@/components/shared/activity-heatmap'
 import { WordsTimelineBoard } from '@/components/words/words-timeline-board'
 import { wordsKeys, TIMELINE_PAGE_SIZE } from '@/lib/queries/keys'
+import { getUserTimezone, dayKeyInTz, startOfDayInTz, dayDiffInTz } from '@/lib/utils/timezone'
 
 export default async function DashboardPage() {
   const t = await getTranslations('dashboard')
   const tp = await getTranslations('progress')
+  const tCol = await getTranslations('collections')
   const supabase = await createClient()
   const {
     data: { user },
@@ -17,7 +19,14 @@ export default async function DashboardPage() {
 
   if (!user) return null
 
-  const startOfYear = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString()
+  const now = new Date()
+  const tz = await getUserTimezone()
+  const startOfToday = startOfDayInTz(now, tz)
+  // The heatmap grid spans up to 53 weeks — fetch a matching window so its
+  // oldest columns aren't silently blank.
+  const heatmapWindowStart = new Date(now.getTime() - 372 * 24 * 60 * 60 * 1000).toISOString()
+
+  const queryClient = new QueryClient()
 
   const [profileRes, streakRes, wordsTodayRes, totalLearnedRes, collectionsRes, sessionsRes] =
     await Promise.all([
@@ -27,7 +36,7 @@ export default async function DashboardPage() {
         .from('word_progress')
         .select('id', { count: 'exact' })
         .eq('user_id', user.id)
-        .gte('updated_at', new Date(new Date().setHours(0, 0, 0, 0)).toISOString()),
+        .gte('updated_at', startOfToday.toISOString()),
       supabase
         .from('word_progress')
         .select('id', { count: 'exact' })
@@ -45,12 +54,44 @@ export default async function DashboardPage() {
         .from('study_sessions')
         .select('started_at, total_words')
         .eq('user_id', user.id)
-        .gte('started_at', startOfYear)
+        .gte('started_at', heatmapWindowStart)
         .order('started_at'),
+      // Prefetch the word-timeline board (first page) + learned progress so the
+      // dashboard widget hydrates without a client-side loading flash.
+      queryClient.prefetchInfiniteQuery({
+        queryKey: wordsKeys.timeline(user.id),
+        queryFn: async () => {
+          const { data } = await supabase
+            .from('words')
+            .select('*')
+            .eq('user_id', user.id)
+            // Ordering must match the client hook (keyset paging on created_at, id).
+            .order('created_at', { ascending: false })
+            .order('id', { ascending: false })
+            .limit(TIMELINE_PAGE_SIZE)
+          return data ?? []
+        },
+        initialPageParam: null,
+        getNextPageParam: () => undefined,
+        pages: 1,
+      }),
+      queryClient.prefetchQuery({
+        queryKey: wordsKeys.progress(user.id),
+        queryFn: async () => {
+          const { data } = await supabase
+            .from('word_progress')
+            .select('word_id, is_learned')
+            .eq('user_id', user.id)
+          return data ?? []
+        },
+      }),
     ])
 
   const profile = profileRes.data as { daily_goal: number; username: string } | null
-  const streak = streakRes.data as { current_streak: number } | null
+  const streak = streakRes.data as {
+    current_streak: number
+    last_activity_at: string | null
+  } | null
   const collections = collectionsRes.data as Array<{
     id: string
     name: string
@@ -64,46 +105,19 @@ export default async function DashboardPage() {
   const dailyGoal = profile?.daily_goal ?? 10
   const todayCount = wordsTodayRes.count ?? 0
   const learnedCount = totalLearnedRes.count ?? 0
-  const currentStreak = streak?.current_streak ?? 0
 
-  // Prefetch the word-timeline board (first page) + learned progress so the
-  // dashboard widget hydrates without a client-side loading flash.
-  const queryClient = new QueryClient()
-  await Promise.all([
-    queryClient.prefetchInfiniteQuery({
-      queryKey: wordsKeys.timeline(user.id),
-      queryFn: async () => {
-        const { data } = await supabase
-          .from('words')
-          .select('*')
-          .eq('user_id', user.id)
-          // Ordering must match the client hook (keyset paging on created_at, id).
-          .order('created_at', { ascending: false })
-          .order('id', { ascending: false })
-          .limit(TIMELINE_PAGE_SIZE)
-        return data ?? []
-      },
-      initialPageParam: null,
-      getNextPageParam: () => undefined,
-      pages: 1,
-    }),
-    queryClient.prefetchQuery({
-      queryKey: wordsKeys.progress(user.id),
-      queryFn: async () => {
-        const { data } = await supabase
-          .from('word_progress')
-          .select('word_id, is_learned')
-          .eq('user_id', user.id)
-        return data ?? []
-      },
-    }),
-  ])
+  // A streak is only "current" if the last activity was today or yesterday
+  // (in the user's timezone) — otherwise it's already broken and shows as 0.
+  const lastActivity = streak?.last_activity_at ? new Date(streak.last_activity_at) : null
+  const currentStreak =
+    streak && lastActivity && dayDiffInTz(now, lastActivity, tz) <= 1
+      ? streak.current_streak
+      : 0
 
-  // Build activity data for heatmap — convert UTC timestamps to local date keys
+  // Build activity data for heatmap — bucket timestamps by the user's local day
   const activityByDay: Record<string, number> = {}
   sessionsRes.data?.forEach((s) => {
-    const d = new Date(s.started_at)
-    const day = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+    const day = dayKeyInTz(new Date(s.started_at), tz)
     activityByDay[day] = (activityByDay[day] ?? 0) + s.total_words
   })
 
@@ -116,7 +130,7 @@ export default async function DashboardPage() {
         <StatCard
           icon={<Flame className="w-5 h-5 text-orange-500" />}
           label={t('streak_current')}
-          value={`${currentStreak} дн`}
+          value={t('streak_days', { count: currentStreak })}
           bg="bg-orange-50 dark:bg-orange-950/20"
         />
         <StatCard
@@ -231,7 +245,7 @@ export default async function DashboardPage() {
               <span className="text-sm font-medium">{col.name}</span>
               {col.is_default && (
                 <span className="ml-auto text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
-                  За замовчуванням
+                  {tCol('default_badge')}
                 </span>
               )}
             </Link>

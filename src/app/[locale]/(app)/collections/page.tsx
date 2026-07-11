@@ -40,7 +40,7 @@ export default async function CollectionsPage() {
 
         const { data } = await supabase
           .from('collections')
-          .select('id, name, description, source_lang, target_lang, is_public, is_default, users(username), collection_words(count)')
+          .select('id, name, description, source_lang, target_lang, is_public, is_default, users:public_profiles(username), collection_words(count)')
           .in('id', followedIds)
         return data ?? []
       },
