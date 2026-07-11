@@ -24,7 +24,11 @@ export function DebugCardPanel({ card }: DebugCardPanelProps) {
 
   const correctQuality = card.format === 'quiz' ? 4 : 5
   const progressForSm2 = card.progress
-    ? { ease_factor: card.progress.ease_factor, interval: card.progress.interval, repetitions: card.progress.repetitions }
+    ? {
+        ease_factor: card.progress.ease_factor ?? 2.5,
+        interval: card.progress.interval ?? 0,
+        repetitions: card.progress.repetitions ?? 0,
+      }
     : null
 
   const afterCorrect = previewSm2Result(progressForSm2, correctQuality)

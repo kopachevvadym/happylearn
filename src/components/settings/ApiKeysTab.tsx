@@ -391,7 +391,7 @@ export function ApiKeysTab({ apiKeys: initialApiKeys }: ApiKeysTabProps) {
                   {key.prefix}••••••
                 </code>
                 <span className="text-xs text-muted-foreground whitespace-nowrap">
-                  {new Date(key.created_at).toLocaleDateString()}
+                  {key.created_at ? new Date(key.created_at).toLocaleDateString() : '—'}
                 </span>
                 <span className="text-xs text-muted-foreground whitespace-nowrap">
                   {key.last_used_at ? new Date(key.last_used_at).toLocaleDateString() : t('apiKeys.never')}

@@ -21,7 +21,7 @@ export type TimelineCursor = { created_at: string; id: string } | null
 export function getTimelineNextPageParam(lastPage: Word[]): TimelineCursor | undefined {
   if (lastPage.length < TIMELINE_PAGE_SIZE) return undefined
   const last = lastPage[lastPage.length - 1]
-  return last ? { created_at: last.created_at, id: last.id } : undefined
+  return last?.created_at ? { created_at: last.created_at, id: last.id } : undefined
 }
 
 async function fetchWordsTimelinePage(userId: string, cursor: TimelineCursor): Promise<Word[]> {

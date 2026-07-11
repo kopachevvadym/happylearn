@@ -78,6 +78,7 @@ export function WordsTimelineBoard({ userId }: WordsTimelineBoardProps) {
   const days = useMemo(() => {
     const map = new Map<string, Word[]>()
     for (const w of words) {
+      if (!w.created_at) continue
       const key = dayKeyFromDate(new Date(w.created_at))
       const bucket = map.get(key)
       if (bucket) bucket.push(w)

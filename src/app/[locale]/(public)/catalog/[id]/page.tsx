@@ -51,7 +51,7 @@ export default async function CatalogCollectionPage({
       .select('id, name, is_default')
       .eq('user_id', user.id)
       .order('is_default', { ascending: false })
-    userCollections = data ?? []
+    userCollections = (data ?? []).map((c) => ({ ...c, is_default: c.is_default ?? false }))
   }
 
   const sourceLangLabel =

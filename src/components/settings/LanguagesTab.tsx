@@ -44,7 +44,7 @@ export function LanguagesTab({ profile }: LanguagesTabProps) {
       )}
 
       <Field label={t('languages.sourceLanguage')}>
-        <select name="source_lang" defaultValue={profile.default_source_lang} className={inputClass}>
+        <select name="source_lang" defaultValue={profile.default_source_lang ?? 'en'} className={inputClass}>
           {Object.entries(SUPPORTED_LANGUAGES).map(([code, name]) => (
             <option key={code} value={code}>{name}</option>
           ))}
@@ -52,7 +52,7 @@ export function LanguagesTab({ profile }: LanguagesTabProps) {
       </Field>
 
       <Field label={t('languages.targetLanguage')}>
-        <select name="target_lang" defaultValue={profile.default_target_lang} className={inputClass}>
+        <select name="target_lang" defaultValue={profile.default_target_lang ?? 'uk'} className={inputClass}>
           {Object.entries(SUPPORTED_LANGUAGES).map(([code, name]) => (
             <option key={code} value={code}>{name}</option>
           ))}

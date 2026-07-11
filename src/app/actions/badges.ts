@@ -117,12 +117,12 @@ export async function updateStreak(userId: string) {
       return
     } else if (diffDays === 1) {
       // Consecutive day
-      const newStreak = streak.current_streak + 1
+      const newStreak = (streak.current_streak ?? 0) + 1
       await supabase
         .from('user_streaks')
         .update({
           current_streak: newStreak,
-          longest_streak: Math.max(newStreak, streak.longest_streak),
+          longest_streak: Math.max(newStreak, streak.longest_streak ?? 0),
           last_activity_at: new Date().toISOString(),
         })
         .eq('user_id', userId)
@@ -141,7 +141,7 @@ export async function updateStreak(userId: string) {
       .from('user_streaks')
       .update({
         current_streak: 1,
-        longest_streak: Math.max(1, streak.longest_streak),
+        longest_streak: Math.max(1, streak.longest_streak ?? 0),
         last_activity_at: new Date().toISOString(),
       })
       .eq('user_id', userId)

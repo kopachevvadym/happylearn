@@ -117,8 +117,9 @@ export default async function DashboardPage() {
   // Build activity data for heatmap — bucket timestamps by the user's local day
   const activityByDay: Record<string, number> = {}
   sessionsRes.data?.forEach((s) => {
+    if (!s.started_at) return
     const day = dayKeyInTz(new Date(s.started_at), tz)
-    activityByDay[day] = (activityByDay[day] ?? 0) + s.total_words
+    activityByDay[day] = (activityByDay[day] ?? 0) + (s.total_words ?? 0)
   })
 
   return (

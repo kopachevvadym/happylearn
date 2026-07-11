@@ -51,7 +51,9 @@ export async function getStudyCards(collectionIds: string[]): Promise<StudyCard[
     .map((word) => {
       const progress = progressMap.get(word.id) ?? null
       const isDue =
-        !progress || dayKeyInTz(new Date(progress.next_review_at), tz) <= todayKey
+        !progress ||
+        !progress.next_review_at ||
+        dayKeyInTz(new Date(progress.next_review_at), tz) <= todayKey
       // Learned words (auto-graduated or manually marked) are out of rotation
       const isLearned = progress?.is_learned ?? false
       return { word, format: getStudyFormat(progress?.repetitions ?? 0), progress, isDue, isLearned }
@@ -65,8 +67,8 @@ export async function getStudyCards(collectionIds: string[]): Promise<StudyCard[
     if (!a.progress) return 1
     if (!b.progress) return -1
     return (
-      new Date(a.progress.next_review_at).getTime() -
-      new Date(b.progress.next_review_at).getTime()
+      new Date(a.progress.next_review_at ?? 0).getTime() -
+      new Date(b.progress.next_review_at ?? 0).getTime()
     )
   })
 
@@ -188,7 +190,12 @@ export async function getScheduledCount(collectionIds: string[]): Promise<number
   for (const id of wordIds) {
     const progress = progressMap.get(id)
     if (progress?.is_learned) continue
-    if (!progress || dayKeyInTz(new Date(progress.next_review_at), tz) <= todayKey) count++
+    if (
+      !progress ||
+      !progress.next_review_at ||
+      dayKeyInTz(new Date(progress.next_review_at), tz) <= todayKey
+    )
+      count++
   }
   return count
 }

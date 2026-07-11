@@ -58,28 +58,31 @@ export default async function ProfilePage({
     .eq('username', username)
     .single()
 
-  if (!profile) notFound()
+  // View columns are typed nullable — narrow them once here
+  if (!profile || !profile.id || !profile.username) notFound()
+  const profileId = profile.id
+  const profileUsername = profile.username
 
   const [streakRes, badgesRes, collectionsRes, learnedRes] = await Promise.all([
     supabase
       .from('user_streaks')
       .select('current_streak, longest_streak')
-      .eq('user_id', profile.id)
+      .eq('user_id', profileId)
       .single(),
     supabase
       .from('user_badges')
       .select('earned_at, badge:badges(slug, name, description)')
-      .eq('user_id', profile.id)
+      .eq('user_id', profileId)
       .order('earned_at', { ascending: false }),
     supabase
       .from('collections')
       .select('id, name, description, source_lang, target_lang, collection_words(count)')
-      .eq('user_id', profile.id)
+      .eq('user_id', profileId)
       .eq('is_public', true)
       .order('created_at', { ascending: false }),
     // word_progress is private per-user; the aggregate comes from a
     // definer RPC so visitors see the real learned count instead of 0.
-    supabase.rpc('get_public_profile_stats', { profile_id: profile.id }),
+    supabase.rpc('get_public_profile_stats', { profile_id: profileId }),
   ])
 
   const streak = streakRes.data
@@ -99,7 +102,7 @@ export default async function ProfilePage({
 
   const sourceLang = SUPPORTED_LANGUAGES[profile.default_source_lang as keyof typeof SUPPORTED_LANGUAGES] ?? profile.default_source_lang
   const targetLang = SUPPORTED_LANGUAGES[profile.default_target_lang as keyof typeof SUPPORTED_LANGUAGES] ?? profile.default_target_lang
-  const initials = profile.username.slice(0, 2).toUpperCase()
+  const initials = profileUsername.slice(0, 2).toUpperCase()
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
@@ -109,7 +112,7 @@ export default async function ProfilePage({
         {profile.avatar_url ? (
           <img
             src={profile.avatar_url}
-            alt={profile.username}
+            alt={profileUsername}
             className="w-20 h-20 rounded-full object-cover shrink-0"
           />
         ) : (
@@ -120,7 +123,7 @@ export default async function ProfilePage({
 
         {/* Info */}
         <div className="flex-1 min-w-0">
-          <h1 className="text-2xl font-semibold">{profile.username}</h1>
+          <h1 className="text-2xl font-semibold">{profileUsername}</h1>
 
           {profile.display_role && (
             <p className="text-muted-foreground mt-0.5">{profile.display_role}</p>
@@ -138,7 +141,7 @@ export default async function ProfilePage({
             {(streak?.current_streak ?? 0) > 0 && (
               <div className="flex items-center gap-1.5 text-sm">
                 <Flame className="w-4 h-4 text-orange-500" />
-                <span>{t('streak', { count: streak!.current_streak })}</span>
+                <span>{t('streak', { count: streak?.current_streak ?? 0 })}</span>
               </div>
             )}
             {wordsCount > 0 && (

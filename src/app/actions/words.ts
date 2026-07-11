@@ -431,7 +431,7 @@ export async function mergeDuplicates() {
 
   for (const group of duplicateGroups) {
     const sorted = [...group].sort(
-      (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+      (a, b) => new Date(a.created_at ?? 0).getTime() - new Date(b.created_at ?? 0).getTime()
     )
     const [primary, ...duplicates] = sorted
 
@@ -445,9 +445,13 @@ export async function mergeDuplicates() {
       const cur = progressByWord.get(w.id)
       if (!cur) return best
       if (!best) return cur
-      if (cur.repetitions !== best.repetitions) return cur.repetitions > best.repetitions ? cur : best
-      if (cur.interval !== best.interval) return cur.interval > best.interval ? cur : best
-      return new Date(cur.next_review_at) > new Date(best.next_review_at) ? cur : best
+      const curReps = cur.repetitions ?? 0
+      const bestReps = best.repetitions ?? 0
+      if (curReps !== bestReps) return curReps > bestReps ? cur : best
+      const curInterval = cur.interval ?? 0
+      const bestInterval = best.interval ?? 0
+      if (curInterval !== bestInterval) return curInterval > bestInterval ? cur : best
+      return new Date(cur.next_review_at ?? 0) > new Date(best.next_review_at ?? 0) ? cur : best
     }, null)
 
     await supabase
