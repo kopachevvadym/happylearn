@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { createHash, randomBytes } from 'crypto'
 import { z } from 'zod'
 
@@ -116,6 +117,37 @@ export async function deleteApiKey(keyId: string) {
 
   revalidatePath('/[locale]/settings', 'page')
   return { success: true }
+}
+
+/**
+ * One-time login link: lets the user open the app in another browser
+ * profile/device without going through Google again. The link is single-use
+ * and expires per the project's email-OTP TTL (1 hour by default).
+ */
+export async function generateLoginLink() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user?.email) return { error: 'Unauthorized' }
+
+  // Admin generateLink creates the OTP without sending any email
+  const admin = createAdminClient()
+  const { data, error } = await admin.auth.admin.generateLink({
+    type: 'magiclink',
+    email: user.email,
+  })
+
+  if (error || !data?.properties?.hashed_token) {
+    return { error: error?.message ?? 'Failed to generate link' }
+  }
+
+  // Our own confirm route exchanges the token for a session server-side,
+  // so the link works in a completely fresh browser profile.
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? ''
+  const url = `${baseUrl}/auth/confirm?token_hash=${encodeURIComponent(
+    data.properties.hashed_token
+  )}&type=magiclink&next=/dashboard`
+
+  return { success: true, url }
 }
 
 export async function exportData(collectionId?: string) {

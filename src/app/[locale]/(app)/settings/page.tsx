@@ -4,6 +4,7 @@ import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query
 import { profileKeys } from '@/lib/queries/keys'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { ProfileTab } from '@/components/settings/ProfileTab'
+import { LoginLinkSection } from '@/components/settings/LoginLinkSection'
 import { LanguagesTab } from '@/components/settings/LanguagesTab'
 import { AppearanceTab } from '@/components/settings/AppearanceTab'
 import { ApiKeysTab } from '@/components/settings/ApiKeysTab'
@@ -55,6 +56,7 @@ export default async function SettingsPage() {
 
           <TabsContent forceMount className="data-[state=inactive]:hidden" value="profile">
             <ProfileTab profile={profile} />
+            <LoginLinkSection />
           </TabsContent>
 
           <TabsContent forceMount className="data-[state=inactive]:hidden" value="languages">

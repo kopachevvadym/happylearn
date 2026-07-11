@@ -94,5 +94,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!api|auth/callback|_next|_vercel|.*\\..*).*)'],
+  matcher: ['/((?!api|auth/callback|auth/confirm|_next|_vercel|.*\\..*).*)'],
 }

@@ -415,6 +415,16 @@
     "study": {
       "debugMode": "Debug mode",
       "debugModeDesc": "Shows SM-2 data and format progress under each card during a session"
+    },
+    "loginLink": {
+      "title": "Sign-in link",
+      "description": "Generate a one-time link to sign in to this account from another browser profile or device — no Google sign-in needed there.",
+      "generate": "Generate link",
+      "regenerate": "Generate a new link (invalidates the previous one)",
+      "copy": "Copy",
+      "copied": "Copied",
+      "warning": "Anyone with this link can sign in to your account. It works once and expires in about an hour.",
+      "failed": "Failed to generate the link"
     }
   },
   "UserMenu": {
